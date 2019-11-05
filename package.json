@@ -1,0 +1,73 @@
+{
+  "name": "code-engine-source-filesystem",
+  "version": "1.0.0-beta.0",
+  "description": "A CodeEngine plugin that reads files from the filesystem",
+  "keywords": [
+    "code-engine-plugin",
+    "code-engine-source",
+    "filesystem",
+    "disk",
+    "io"
+  ],
+  "author": {
+    "name": "James Messinger",
+    "url": "https://jamesmessinger.com"
+  },
+  "license": "MIT",
+  "homepage": "https://engine.codes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CodeEngineOrg/code-engine-source-filesystem.git"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "clean": "shx rm -rf .nyc_output coverage lib",
+    "lint": "npm run lint:typescript && npm run lint:javascript",
+    "lint:typescript": "tslint -p tsconfig.json",
+    "lint:javascript": "eslint test",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "mocha && npm run lint",
+    "coverage": "nyc node_modules/mocha/bin/mocha",
+    "upgrade": "npm-check -u && npm audit fix",
+    "bump": "bump prerelease --tag --push --all",
+    "release": "npm run upgrade && npm run clean && npm run build && npm test && npm run bump"
+  },
+  "engines": {
+    "node": ">=12.5"
+  },
+  "engineStrict": true,
+  "devDependencies": {
+    "@code-engine/lib": "^1.0.0-beta.3",
+    "@code-engine/types": "^1.0.0-beta.7",
+    "@types/chai": "^4.2.4",
+    "@types/is-glob": "^4.0.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.12.5",
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.7",
+    "eslint": "^6.6.0",
+    "eslint-config-modular": "^7.0.0",
+    "mocha": "^6.2.2",
+    "npm-check": "^5.9.0",
+    "nyc": "^14.1.1",
+    "shx": "^0.3.2",
+    "source-map-support": "^0.5.16",
+    "tmp": "^0.1.0",
+    "tslint": "^5.20.0",
+    "tslint-modular": "^1.4.1",
+    "typescript": "^3.6.4",
+    "typescript-tslint-plugin": "^0.5.0",
+    "version-bump-prompt": "^5.0.3"
+  },
+  "dependencies": {
+    "@code-engine/utils": "^1.0.0-beta.16",
+    "file-path-filter": "^2.2.2",
+    "is-glob": "^4.0.1",
+    "readdir-enhanced": "^5.0.1"
+  }
+}
