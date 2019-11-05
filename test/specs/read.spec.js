@@ -4,8 +4,25 @@ const filesystem = require("../../");
 const CodeEngine = require("../utils/code-engine");
 const { createDir, globify } = require("../utils/utils");
 const { assert, expect } = require("chai");
+const { join } = require("path");
 
 describe.only("filesystem.read()", () => {
+
+  it("should read a file path", async () => {
+    let dir = await createDir([
+      { path: "text-file.txt", contents: "Hello, wrold!" },
+      { path: "web-page.html", contents: "<h1>Hello, world!</h1>" },
+      { path: "image.jpg", contents: "010010101010101101" },
+    ]);
+
+    let engine = CodeEngine.create();
+    await engine.use(filesystem({ path: join(dir, "text-file.txt") }));
+
+    let summary = await engine.build();
+
+    expect(summary.input.fileCount).to.equal(1);
+    expect(summary.input.fileSize).to.equal(13);
+  });
 
   it("should read nothing if the directory is empty", async () => {
     let dir = await createDir();
@@ -15,7 +32,7 @@ describe.only("filesystem.read()", () => {
     let summary = await engine.build();
 
     expect(summary.input.fileCount).to.equal(0);
-    expect(summary.output.fileCount).to.equal(0);
+    expect(summary.input.fileSize).to.equal(0);
   });
 
   it("should read nothing if nothing matches the glob pattern", async () => {
@@ -31,7 +48,7 @@ describe.only("filesystem.read()", () => {
     let summary = await engine.build();
 
     expect(summary.input.fileCount).to.equal(0);
-    expect(summary.output.fileCount).to.equal(0);
+    expect(summary.input.fileSize).to.equal(0);
   });
 
   it("should read nothing if nothing matches the filter criteria", async () => {
@@ -50,7 +67,7 @@ describe.only("filesystem.read()", () => {
     let summary = await engine.build();
 
     expect(summary.input.fileCount).to.equal(0);
-    expect(summary.output.fileCount).to.equal(0);
+    expect(summary.input.fileSize).to.equal(0);
   });
 
   it("should throw an error if the path doesn't exist", async () => {
