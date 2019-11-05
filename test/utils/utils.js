@@ -1,7 +1,7 @@
 "use strict";
 
 const tmp = require("tmp");
-const { join } = require("path");
+const { join, posix } = require("path");
 const { promises: fs } = require("fs");
 
 // Gracefully cleanup temp files
@@ -16,6 +16,17 @@ module.exports = {
    */
   async delay (timeout, result) {
     await new Promise((resolve) => setTimeout(() => resolve(result), timeout));
+  },
+
+
+  /**
+   * Combines the specified path and glob pattern.
+   */
+  globify (path, glob) {
+    if (process.platform === "win32") {
+      path = path.replace(/\\/g, "/");
+    }
+    return posix.join(path, glob);
   },
 
 
