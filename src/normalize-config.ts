@@ -48,7 +48,7 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
  */
 function splitGlob(path: string): [string, string | undefined] {
   // Determine where the glob pattern starts
-  let segments = splitPath(path);
+  let segments = path.split("/");
   let globSegment = segments.findIndex((segment) => isGlob(segment, { strict: false }));
 
   if (globSegment === -1) {
@@ -62,16 +62,6 @@ function splitGlob(path: string): [string, string | undefined] {
       segments.slice(globSegment).join("/")
     ];
   }
-}
-
-/**
- * Splits a file or directory path into segments.
- *
- * @example
- *  "./path/to/a/file" => ["path", "to", "a", "file"]
- */
-function splitPath(path: string): string[] {
-  return path.split("/").filter((segment) => segment && segment !== ".");
 }
 
 /**
