@@ -1,5 +1,4 @@
 import { Context, File, FileProcessor } from "@code-engine/types";
-import { promises as fs } from "fs";
 import { URL } from "url";
 import { createFileUrl } from "./create-file";
 import { NormalizedConfig } from "./normalize-config";
@@ -14,7 +13,7 @@ export function processFile(config: NormalizedConfig): FileProcessor {
   return async (file: File, context: Context): Promise<File> => {
     if (file.size === 0 && file.source.startsWith(source)) {
       let url = new URL(file.source);
-      file.contents = await fs.readFile(url);
+      file.contents = await config.fs.readFile(url);
     }
 
     return file;
