@@ -12,7 +12,7 @@ function filesystem(conf?: FileSystemConfig): Plugin {
   let config = normalizeConfig(conf);
 
   return {
-    name: "Filesystem source",
+    name: "Filesystem Source",
     read: read(config),
     watch: watch(config),
     processFile: processFile(config),
