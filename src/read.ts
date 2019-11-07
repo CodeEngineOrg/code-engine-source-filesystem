@@ -38,28 +38,34 @@ async function readFile(config: NormalizedConfig, stats: FSStats, context: Conte
 /**
  * Reads all files in the directory that meet the filter criteria
  */
-function readDir(config: NormalizedConfig, context: Context): AsyncIterableIterator<File> {
+function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File> {
   let dir = config.path;
   let files = find(dir, config, context);
 
   return {
     [Symbol.asyncIterator]() {
-      return this;
-    },
+      return { next: readNextFile };
+    }
+  };
 
-    async next() {
-      let result = await files.next();
-      if (result.done) {
-        return { done: true, value: undefined };
-      }
-      else {
-        let stats = result.value;
+  async function readNextFile(): Promise<IteratorResult<File>> {
+    let result = await files.next();
+    if (result.done) {
+      return { done: true, value: undefined };
+    }
+    else {
+      let stats = result.value;
+
+      if (stats.isFile()) {
         let file = createFile(stats.path, stats);
         file.contents = await config.fs.promises.readFile(join(dir, stats.path));
         return { value: file };
       }
+      else {
+        return readNextFile();
+      }
     }
-  };
+  }
 }
 
 /**
