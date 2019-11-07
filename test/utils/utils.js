@@ -1,7 +1,10 @@
 "use strict";
 
+/** @typedef { import("sinon").SinonSpy } SinonSpy */
+/** @typedef { import("sinon").SinonSpyCall } SinonSpyCall */
+
 const tmp = require("tmp");
-const { join, posix } = require("path");
+const { dirname, join, posix } = require("path");
 const { promises: fs } = require("fs");
 
 // Gracefully cleanup temp files
@@ -31,6 +34,17 @@ module.exports = {
 
 
   /**
+   * Returns the file from each `processFile()` call.
+   *
+   * @param spy {SinonSpy} - A Sinon Spy for the `processFile()` method
+   * @returns {Array}
+   */
+  getFiles (spy) {
+    return spy.getCalls().map((call) => call.args[0]);
+  },
+
+
+  /**
    * Creates a temp directory with the given contents.
    *
    * @param entries {object[]}
@@ -50,11 +64,13 @@ module.exports = {
       entry = typeof entry === "string" ? { path: entry } : entry;
       let { type, path, contents } = entry;
       path = join(dir, path);
+      contents = contents || Buffer.alloc(0);
 
       if (type === "dir") {
         await fs.mkdir(path, { recursive: true });
       }
       else {
+        await fs.mkdir(dirname(path), { recursive: true });
         await fs.writeFile(path, contents);
       }
     }
