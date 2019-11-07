@@ -10,9 +10,20 @@ export interface FileSystemConfig {
    *
    *  - A file or directory path
    *  - A glob pattern
-   *  -
+   *
    */
   path: string;
+
+  /**
+   * Determines the depth of sub-directories that will be read. Can be any of the following:
+   *
+   *  - The number of sub-directories deep to crawl
+   *  - `Infinity` or `true` to crawl all sub-directories
+   *  - Zero or `false` to only read the top-level directory contents
+   *
+   * Defaults to `true`.
+   */
+  deep?: boolean | number;
 
   /**
    * Glob patterns, regular expressions, or filter functions that limit which files are read.

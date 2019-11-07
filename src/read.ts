@@ -40,7 +40,7 @@ async function readFile(config: NormalizedConfig, stats: FSStats, context: Conte
  */
 function readDir(config: NormalizedConfig, context: Context): AsyncIterableIterator<File> {
   let dir = config.path;
-  let files = find(dir, config.filter, context);
+  let files = find(dir, config, context);
 
   return {
     [Symbol.asyncIterator]() {
@@ -65,11 +65,11 @@ function readDir(config: NormalizedConfig, context: Context): AsyncIterableItera
 /**
  * Finds all files in the directory that match the filter criteria
  */
-function find(dir: string, filter: FilterFunction, context: Context) {
+function find(dir: string, config: NormalizedConfig, context: Context) {
   return readdirIterator(dir, {
     stats: true,
-    deep: true,
     filter(stat: Stats) {
+    deep: config.deep,
       let file = createFile(stat.path, stat);
       return filter(file, context);
     },
