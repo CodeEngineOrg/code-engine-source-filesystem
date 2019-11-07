@@ -22,26 +22,41 @@ export interface FileSystemConfig {
   filter?: Filter;
 
   /**
-   * Custom filesystem functions to call instead of Node's `fs.promises` API.
+   * Custom filesystem functions to call instead of Node's `fs` API.
    *
-   * @see https://nodejs.org/api/fs.html#fs_fs_promises_api
+   * @see https://nodejs.org/api/fs.html
    */
   fs?: Partial<FS>;
 }
 
 /**
- * Custom filesystem functions to call instead of Node's `fs.promises` API.
+ * Custom filesystem functions to call instead of Node's `fs` API.
  *
- * @see https://nodejs.org/api/fs.html#fs_fs_promises_api
+ * @see https://nodejs.org/api/fs.html
  */
 export interface FS {
   /**
-   * Returns information about a filesystem path.
+   * Returns filesystem information about a directory entry.
    */
-  stat(path: PathLike): Promise<Stats>;
+  stat(path: string, callback: Callback<Stats>): void;
+
+  /**
+   * Returns filesystem information about a symlink.
+   */
+  lstat(path: string, callback: Callback<Stats>): void;
+
+  /**
+   * Returns the names of files in a directory.
+   */
+  readdir(path: string, callback: Callback<string[]>): void;
 
   /**
    * Reads the entire contents of a file.
    */
-  readFile(path: PathLike): Promise<Buffer>;
+  readFile(path: PathLike, callback: Callback<Buffer>): void;
 }
+
+/**
+ * An error-first callback function.
+ */
+export declare type Callback<T> = (err: Error | null, result: T) => void;

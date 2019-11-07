@@ -1,8 +1,9 @@
 import { File, FilterFunction } from "@code-engine/types";
 import { validate } from "@code-engine/utils";
 import { createFilter } from "file-path-filter";
-import { promises as fsPromises } from "fs";
+import * as nodeFS from "fs";
 import * as isGlob from "is-glob";
+import { promisify } from "util";
 import { FileSystemConfig, FS } from "./config";
 
 /**
@@ -11,8 +12,18 @@ import { FileSystemConfig, FS } from "./config";
  */
 export interface NormalizedConfig {
   path: string;
-  filter: FilterFunction;
-  fs: FS;
+  filter?: boolean | string | RegExp | FilterFunction;
+  fs: FSPromises;
+}
+
+/**
+ * Promisified wrappers around `fs` functions.
+ */
+export interface FSPromises extends FS {
+  promises: {
+    stat(path: string): Promise<nodeFS.Stats>;           // tslint:disable-line: completed-docs
+    readFile(path: nodeFS.PathLike): Promise<Buffer>;    // tslint:disable-line: completed-docs
+  };
 }
 
 /**
@@ -23,7 +34,7 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
   config = validate.object(config, "config");
   let path = validate.minLength(config.path, 1, "path");
   let filter: FilterFunction;
-  let fs: FS = fsPromises;
+  let fs: FSPromises = nodeFS;
 
   if (config.filter === undefined) {
     // Determine if the path is a glob pattern
@@ -45,8 +56,14 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
 
   if (config.fs) {
     fs = {
-      stat: validate.function(config.fs.stat, "fs.stat", fsPromises.stat),
-      readFile: validate.function(config.fs.readFile, "fs.readFile", fsPromises.readFile),
+      stat: validate.function(config.fs.stat, "fs.stat", nodeFS.stat),
+      lstat: validate.function(config.fs.lstat, "fs.lstat", nodeFS.lstat),
+      readdir: validate.function(config.fs.readdir, "fs.readdir", nodeFS.readdir),
+      readFile: validate.function(config.fs.readFile, "fs.readFile", nodeFS.readFile),
+      promises: {
+        stat: promisify(validate.function(config.fs.stat, "fs.stat", nodeFS.stat)),
+        readFile: promisify(validate.function(config.fs.readFile, "fs.readFile", nodeFS.readFile)),
+      }
     };
   }
 

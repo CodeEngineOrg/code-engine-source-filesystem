@@ -24,7 +24,7 @@ export function processFile(config: NormalizedConfig): FileProcessor {
   return async (file: File, context: Context): Promise<File> => {
     if (file.size === 0 && file.source.startsWith(source)) {
       let url = new URL(file.source);
-      file.contents = await config.fs.readFile(url);
+      file.contents = await config.fs.promises.readFile(url);
     }
 
     return file;

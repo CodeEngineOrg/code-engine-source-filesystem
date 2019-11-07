@@ -11,7 +11,7 @@ import { NormalizedConfig } from "./normalize-config";
 export function read(config: NormalizedConfig) {
   return async (context: Context) => {
     let path = resolve(context.cwd, config.path);
-    let stats = await config.fs.stat(path);
+    let stats = await config.fs.promises.stat(path);
 
     if (stats.isFile()) {
       return readFile(config, stats, context);
@@ -30,7 +30,7 @@ async function readFile(config: NormalizedConfig, stats: FSStats, context: Conte
   let file = createFile(basename(config.path), stats);
 
   if (config.filter(file, context)) {
-    file.contents = await config.fs.readFile(config.path);
+    file.contents = await config.fs.promises.readFile(config.path);
     return file;
   }
 }
@@ -55,7 +55,7 @@ function readDir(config: NormalizedConfig, context: Context): AsyncIterableItera
       else {
         let stats = result.value;
         let file = createFile(stats.path, stats);
-        file.contents = await config.fs.readFile(join(dir, stats.path));
+        file.contents = await config.fs.promises.readFile(join(dir, stats.path));
         return { value: file };
       }
     }
