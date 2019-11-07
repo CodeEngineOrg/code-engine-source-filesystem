@@ -1,31 +1,10 @@
-import { File, FilterFunction } from "@code-engine/types";
+import { File, Filter, FilterFunction } from "@code-engine/types";
 import { validate } from "@code-engine/utils";
-import { createFilter } from "file-path-filter";
+import { createFilter, filePathFilter } from "file-path-filter";
 import * as nodeFS from "fs";
 import * as isGlob from "is-glob";
 import { promisify } from "util";
 import { FileSystemConfig, FS } from "./config";
-
-/**
- * Normalized and sanitized configuration.
- * @internal
- */
-export interface NormalizedConfig {
-  path: string;
-  deep: number;
-  filter?: boolean | string | RegExp | FilterFunction;
-  fs: FSPromises;
-}
-
-/**
- * Promisified wrappers around `fs` functions.
- */
-export interface FSPromises extends FS {
-  promises: {
-    stat(path: string): Promise<nodeFS.Stats>;           // tslint:disable-line: completed-docs
-    readFile(path: nodeFS.PathLike): Promise<Buffer>;    // tslint:disable-line: completed-docs
-  };
-}
 
 /**
  * Validates and normalizes the configuration.
@@ -34,8 +13,8 @@ export interface FSPromises extends FS {
 export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
   config = validate.object(config, "config");
   let path = validate.minLength(config.path, 1, "path");
-  let filter: FilterFunction;
   let deep = validateDeep(config.deep);
+  let [filter, filterCriteria] = validateFilter(config.filter);
   let fs: FSPromises = nodeFS;
 
   if (config.filter === undefined) {
@@ -45,15 +24,9 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
 
     if (glob) {
       // Only read files that match the glob pattern
-      filter = createFilter({ map }, glob);
+      filterCriteria = glob;
+      filter = filePathFilter(glob);
     }
-    else {
-      // Read all files in the path
-      filter = () => true;
-    }
-  }
-  else {
-    filter = createFilter({ map }, config.filter);
   }
 
   if (config.fs) {
@@ -69,7 +42,7 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
     };
   }
 
-  return { path, deep, filter, fs };
+  return { path, deep, filter, filterCriteria, fs };
 }
 
 /**
@@ -90,6 +63,29 @@ function validateDeep(deep?: boolean | number): number {
       return validate.positiveInteger(deep, "deep option");
   }
 }
+
+/**
+ * Validates and normalizes the `filter` option.
+ */
+function validateFilter(filter?: Filter): [FilterFunction, FilterCriteria] {
+  let filterCriteria: FilterCriteria;
+
+  if (filter === undefined) {
+    // There is no filter, so allow all files
+    filterCriteria = undefined;
+    filter = () => true;
+  }
+  else if (typeof filter === "string" || typeof filter === "boolean" || filter instanceof RegExp) {
+    // This is a simple filter, so just return it as-is
+    filterCriteria = filter;
+    filter = filePathFilter(filterCriteria);
+  }
+  else {
+    // This is a more complicated filter, so wrap it in a filter function that accepts a CodeEngine File object.
+    filter = filterCriteria = createFilter({ map }, filter);
+  }
+
+  return [filter, filterCriteria];
 }
 
 /**
@@ -118,4 +114,32 @@ function splitGlob(path: string): [string, string | undefined] {
  */
 function map(file: File): string {
   return file.path;
+}
+
+/**
+ * Filter criteria to pass to Readdir Enhanced.
+ */
+export type FilterCriteria = undefined | boolean | string | RegExp | FilterFunction;
+
+/**
+ * Normalized and sanitized configuration.
+ * @internal
+ */
+export interface NormalizedConfig {
+  path: string;
+  deep: number;
+  filter: FilterFunction;
+  filterCriteria: FilterCriteria;
+  fs: FSPromises;
+}
+
+/**
+ * Promisified wrappers around `fs` functions.
+ */
+export interface FSPromises extends FS {
+  promises: {
+    // tslint:disable: completed-docs
+    stat(path: string): Promise<nodeFS.Stats>;
+    readFile(path: nodeFS.PathLike): Promise<Buffer>;
+  };
 }
