@@ -1,6 +1,6 @@
 {
   "name": "code-engine-source-filesystem",
-  "version": "1.0.0-beta.0",
+  "version": "0.0.0",
   "description": "A CodeEngine plugin that reads files from the filesystem",
   "keywords": [
     "code-engine-plugin",
@@ -34,7 +34,7 @@
     "test": "mocha && npm run lint",
     "coverage": "nyc node_modules/mocha/bin/mocha",
     "upgrade": "npm-check -u && npm audit fix",
-    "bump": "bump prerelease --tag --push --all",
+    "bump": "bump --tag --push --all",
     "release": "npm run upgrade && npm run clean && npm run build && npm test && npm run bump"
   },
   "engines": {
@@ -42,8 +42,8 @@
   },
   "engineStrict": true,
   "devDependencies": {
-    "@code-engine/lib": "^1.0.0-beta.3",
-    "@code-engine/types": "^1.0.0-beta.7",
+    "@code-engine/lib": "^0.0.1",
+    "@code-engine/types": "^0.0.1",
     "@types/chai": "^4.2.4",
     "@types/is-glob": "^4.0.1",
     "@types/mocha": "^5.2.7",
@@ -66,7 +66,7 @@
     "version-bump-prompt": "^5.0.3"
   },
   "dependencies": {
-    "@code-engine/utils": "^1.0.0-beta.17",
+    "@code-engine/utils": "^0.0.1",
     "file-path-filter": "^2.2.2",
     "is-glob": "^4.0.1",
     "readdir-enhanced": "^5.1.0"
