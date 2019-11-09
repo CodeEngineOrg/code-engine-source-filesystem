@@ -42,12 +42,12 @@
   },
   "engineStrict": true,
   "devDependencies": {
-    "@code-engine/lib": "^0.0.1",
-    "@code-engine/types": "^0.0.1",
+    "@code-engine/lib": "0.0.2",
+    "@code-engine/types": "0.0.1",
     "@types/chai": "^4.2.4",
     "@types/is-glob": "^4.0.1",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.6",
+    "@types/node": "^12.12.7",
     "chai": "^4.2.0",
     "coveralls": "^3.0.7",
     "eslint": "^6.6.0",
@@ -66,7 +66,8 @@
     "version-bump-prompt": "^5.0.3"
   },
   "dependencies": {
-    "@code-engine/utils": "^0.0.1",
+    "@code-engine/utils": "0.0.2",
+    "@code-engine/validate": "0.0.1",
     "file-path-filter": "^2.2.2",
     "is-glob": "^4.0.1",
     "readdir-enhanced": "^5.1.0"
