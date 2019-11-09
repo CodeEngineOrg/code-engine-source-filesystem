@@ -114,6 +114,7 @@ describe("filesystem.read()", () => {
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
+        expect(error.code).to.equal("ENOENT");
         expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*homepage.html'$/);
       }
@@ -150,6 +151,166 @@ describe("filesystem.read()", () => {
       let robotsTxt = files.find((file) => file.name === "robots.txt");
       expect(robotsTxt).to.have.property("path", normalize("www/robots.txt"));
       expect(robotsTxt).to.have.property("text", "Hello, world!");
+
+      let favicon = files.find((file) => file.name === "favicon.ico");
+      expect(favicon).to.have.property("path", normalize("www/img/favicon.ico"));
+      expect(favicon.contents).to.deep.equal(Buffer.from([1, 1, 1, 1, 1]));
+
+      let logoWide = files.find((file) => file.name === "logo-wide.png");
+      expect(logoWide).to.have.property("path", normalize("www/img/logos/logo-wide.png"));
+      expect(logoWide.contents).to.deep.equal(Buffer.from([1, 0, 1, 0, 1]));
+
+      let logoSquare = files.find((file) => file.name === "logo-square.png");
+      expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
+      expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
+    });
+
+    it("should only read files in top-level directory", async () => {
+      let dir = await createDir([
+        { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
+        { path: "www/robots.txt", contents: "Hello, world!" },
+        { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
+        { path: "www/img/logos/logo-wide.png", contents: Buffer.from([1, 0, 1, 0, 1]) },
+        { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
+      ]);
+
+      let engine = CodeEngine.create();
+      let source = filesystem({
+        path: join(dir, "www"),
+        deep: false,
+      });
+      let spy = sinon.spy();
+      await engine.use(source, spy);
+
+      let summary = await engine.build();
+
+      expect(summary.input.fileCount).to.equal(2);
+      expect(summary.input.fileSize).to.equal(35);
+
+      sinon.assert.callCount(spy, 2);
+      let files = getFiles(spy);
+
+      let indexHtml = files.find((file) => file.name === "index.html");
+      expect(indexHtml).to.have.property("path", normalize("index.html"));
+      expect(indexHtml).to.have.property("text", "<h1>Hello, world!</h1>");
+
+      let robotsTxt = files.find((file) => file.name === "robots.txt");
+      expect(robotsTxt).to.have.property("path", normalize("robots.txt"));
+      expect(robotsTxt).to.have.property("text", "Hello, world!");
+    });
+
+    it("should read all files that match the glob pattern", async () => {
+      let dir = await createDir([
+        { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
+        { path: "www/robots.txt", contents: "Hello, world!" },
+        { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
+        { path: "www/img/logos/logo-wide.png", contents: Buffer.from([1, 0, 1, 0, 1]) },
+        { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
+      ]);
+
+      let engine = CodeEngine.create();
+      let source = filesystem({
+        path: globify(dir, "**/*.{html,png}"),
+      });
+      let spy = sinon.spy();
+      await engine.use(source, spy);
+
+      let summary = await engine.build();
+
+      expect(summary.input.fileCount).to.equal(3);
+      expect(summary.input.fileSize).to.equal(32);
+
+      sinon.assert.callCount(spy, 3);
+      let files = getFiles(spy);
+
+      let indexHtml = files.find((file) => file.name === "index.html");
+      expect(indexHtml).to.have.property("path", normalize("www/index.html"));
+      expect(indexHtml).to.have.property("text", "<h1>Hello, world!</h1>");
+
+      let logoWide = files.find((file) => file.name === "logo-wide.png");
+      expect(logoWide).to.have.property("path", normalize("www/img/logos/logo-wide.png"));
+      expect(logoWide.contents).to.deep.equal(Buffer.from([1, 0, 1, 0, 1]));
+
+      let logoSquare = files.find((file) => file.name === "logo-square.png");
+      expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
+      expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
+    });
+
+    it("should read all files that match any of the glob patterns", async () => {
+      let dir = await createDir([
+        { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
+        { path: "www/robots.txt", contents: "Hello, world!" },
+        { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
+        { path: "www/img/index.html", contents: "<h1>Images</h1>" },
+        { path: "www/img/logos/index.html", contents: "<h1>Logo Images</h1>" },
+        { path: "www/img/logos/logo-wide.png", contents: Buffer.from([1, 0, 1, 0, 1]) },
+        { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
+      ]);
+
+      let engine = CodeEngine.create();
+      let source = filesystem({
+        path: dir,
+        filter: [
+          "*.html",
+          "*/*/*",
+          "**/*.png",
+          "!*/*/*/*wide*",
+        ],
+      });
+      let spy = sinon.spy();
+      await engine.use(source, spy);
+
+      let summary = await engine.build();
+
+      expect(summary.input.fileCount).to.equal(3);
+      expect(summary.input.fileSize).to.equal(25);
+
+      sinon.assert.callCount(spy, 3);
+      let files = getFiles(spy);
+
+      let indexHtml = files.find((file) => file.name === "index.html");
+      expect(indexHtml).to.have.property("path", normalize("www/img/index.html"));
+      expect(indexHtml).to.have.property("text", "<h1>Images</h1>");
+
+      let favicon = files.find((file) => file.name === "favicon.ico");
+      expect(favicon).to.have.property("path", normalize("www/img/favicon.ico"));
+      expect(favicon.contents).to.deep.equal(Buffer.from([1, 1, 1, 1, 1]));
+
+      let logoSquare = files.find((file) => file.name === "logo-square.png");
+      expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
+      expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
+    });
+
+    it("should read all files that match custom filter criteria", async () => {
+      let dir = await createDir([
+        { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
+        { path: "www/robots.txt", contents: "Hello, world!" },
+        { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
+        { path: "www/img/logos/logo-wide.png", contents: Buffer.from([1, 0, 1, 0, 1]) },
+        { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
+      ]);
+
+      let engine = CodeEngine.create();
+      let source = filesystem({
+        path: dir,
+        filter (file) {
+          return file.name.includes("a") || file.name.includes("e");
+        }
+      });
+      let spy = sinon.spy();
+      await engine.use(source, spy);
+
+      let summary = await engine.build();
+
+      expect(summary.input.fileCount).to.equal(4);
+      expect(summary.input.fileSize).to.equal(37);
+
+      sinon.assert.callCount(spy, 4);
+      let files = getFiles(spy);
+
+      let indexHtml = files.find((file) => file.name === "index.html");
+      expect(indexHtml).to.have.property("path", normalize("www/index.html"));
+      expect(indexHtml).to.have.property("text", "<h1>Hello, world!</h1>");
 
       let favicon = files.find((file) => file.name === "favicon.ico");
       expect(favicon).to.have.property("path", normalize("www/img/favicon.ico"));
@@ -224,6 +385,7 @@ describe("filesystem.read()", () => {
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
+        expect(error.code).to.equal("ENOENT");
         expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*this[/\\]path[/\\]does[/\\]not[/\\]exist'$/);
       }
@@ -240,6 +402,7 @@ describe("filesystem.read()", () => {
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
+        expect(error.code).to.equal("ENOENT");
         expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*this[/\\]path[/\\]does[/\\]not[/\\]exist'$/);
       }
