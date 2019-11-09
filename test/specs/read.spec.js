@@ -17,11 +17,10 @@ describe("filesystem.read()", () => {
         { path: "www/img/logo.png", contents: Buffer.from([1, 0, 1, 1, 0, 1, 0, 1, 1]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: join(dir, "www/robots.txt") });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(1);
@@ -39,11 +38,10 @@ describe("filesystem.read()", () => {
         { path: "www/img/logo.png", contents: Buffer.from([1, 0, 1, 1, 0, 1, 0, 1, 1]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: join(dir, "www/img/logo.png") });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(1);
@@ -61,11 +59,10 @@ describe("filesystem.read()", () => {
         "www/img/logo.png",
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: join(dir, "www/index.html") });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(1);
@@ -84,13 +81,12 @@ describe("filesystem.read()", () => {
         "www/img/logo.png",
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: join(dir, "www/index.html"),
         filter: false,
       });
+      let engine = CodeEngine.create();
       await engine.use(source);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(0);
@@ -104,8 +100,8 @@ describe("filesystem.read()", () => {
         "www/img/logo.png",
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: join(dir, "www/homepage.html") });
+      let engine = CodeEngine.create();
       await engine.use(source);
 
       try {
@@ -131,11 +127,10 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: dir });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(5);
@@ -174,14 +169,13 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: join(dir, "www"),
         deep: false,
       });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(2);
@@ -208,13 +202,12 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: globify(dir, "**/*.{html,png}"),
       });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(3);
@@ -247,7 +240,6 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: dir,
         filter: [
@@ -258,8 +250,8 @@ describe("filesystem.read()", () => {
         ],
       });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(3);
@@ -290,7 +282,6 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: dir,
         filter (file) {
@@ -298,8 +289,8 @@ describe("filesystem.read()", () => {
         }
       });
       let spy = sinon.spy();
+      let engine = CodeEngine.create();
       await engine.use(source, spy);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(4);
@@ -344,10 +335,9 @@ describe("filesystem.read()", () => {
         "www/img/logo.png",
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({ path: globify(dir, "**/*.md") });
+      let engine = CodeEngine.create();
       await engine.use(source);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(0);
@@ -361,13 +351,12 @@ describe("filesystem.read()", () => {
         "www/img/logo.png",
       ]);
 
-      let engine = CodeEngine.create();
       let source = filesystem({
         path: dir,
         filter: /\.md$/
       });
+      let engine = CodeEngine.create();
       await engine.use(source);
-
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(0);
@@ -375,8 +364,8 @@ describe("filesystem.read()", () => {
     });
 
     it("should throw an error if the path doesn't exist", async () => {
-      let engine = CodeEngine.create();
       let source = filesystem({ path: "this/path/does/not/exist" });
+      let engine = CodeEngine.create();
       await engine.use(source);
 
       try {
@@ -392,8 +381,8 @@ describe("filesystem.read()", () => {
     });
 
     it("should throw an error if the path portion of a glob pattern doesn't exist", async () => {
-      let engine = CodeEngine.create();
       let source = filesystem({ path: "this/path/does/not/exist/**/*.txt" });
+      let engine = CodeEngine.create();
       await engine.use(source);
 
       try {

@@ -64,7 +64,7 @@ module.exports = {
    *  - `path`: The relative path of the entry.
    *  - `contents`: The contents of the file, as a string or buffer
    *
-   * @returns {string} - The directory path
+   * @returns {Promise<string>} - The directory path
    */
   async createDir (entries = []) {
     // Create a temp directory
