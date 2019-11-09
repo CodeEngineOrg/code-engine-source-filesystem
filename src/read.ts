@@ -1,4 +1,5 @@
 import { Context, File } from "@code-engine/types";
+import { ConcurrentTasks } from "@code-engine/utils";
 import { Stats as FSStats } from "fs";
 import { basename, join, resolve } from "path";
 import { readdirIterator, Stats } from "readdir-enhanced";
@@ -41,12 +42,29 @@ async function readFile(config: NormalizedConfig, stats: FSStats, context: Conte
 function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File> {
   let dir = config.path;
   let files = find(dir, config, context);
+  let concurrentReads = new ConcurrentTasks<IteratorResult<File>>(context.concurrency);
 
   return {
     [Symbol.asyncIterator]() {
-      return { next: readNextFile };
+      return { next: readConcurrently };
     }
   };
+
+  async function readConcurrently() {
+    while (concurrentReads.isAvailable) {
+      let promise = readNextFile();
+      concurrentReads.add(promise);
+    }
+
+    while (true) {
+      let result = await concurrentReads.race();
+      if (result.done && concurrentReads.size > 0) {
+        continue;
+      }
+
+      return result;
+    }
+  }
 
   async function readNextFile(): Promise<IteratorResult<File>> {
     let result = await files.next();
