@@ -45,6 +45,17 @@ module.exports = {
 
 
   /**
+   * Returns the file path from each `processFile()` call.
+   *
+   * @param spy {SinonSpy} - A Sinon Spy for the `processFile()` method
+   * @returns {string[]}
+   */
+  getFilePaths (spy) {
+    return spy.getCalls().map((call) => call.args[0].path);
+  },
+
+
+  /**
    * Creates a temp directory with the given contents.
    *
    * @param entries {object[]}
