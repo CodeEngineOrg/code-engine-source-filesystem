@@ -89,7 +89,7 @@ function find(dir: string, config: NormalizedConfig, context: Context) {
 
   return readdirIterator(dir, {
     stats: true,
-    deep: config.deep,
+    deep: config.depth,
     fs: config.fs,
     filter,
   });

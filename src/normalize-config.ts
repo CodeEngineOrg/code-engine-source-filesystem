@@ -13,7 +13,7 @@ import { FileSystemConfig, FS } from "./config";
 export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
   config = validate.type.object(config, "config");
   let path = validate.string.minLength(config.path, 1, "path");
-  let deep = validateDeep(config.deep);
+  let depth = validateDeep(config.deep);
   let [filter, filterCriteria] = validateFilter(config.filter);
   let fs: FSPromises = nodeFS;
 
@@ -42,7 +42,7 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
     };
   }
 
-  return { path, deep, filter, filterCriteria, fs };
+  return { path, depth, filter, filterCriteria, fs };
 }
 
 /**
@@ -127,7 +127,7 @@ export type FilterCriteria = undefined | boolean | string | RegExp | FilterFunct
  */
 export interface NormalizedConfig {
   path: string;
-  deep: number;
+  depth: number;
   filter: FilterFunction;
   filterCriteria: FilterCriteria;
   fs: FSPromises;
