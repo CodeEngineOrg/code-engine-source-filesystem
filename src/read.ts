@@ -1,8 +1,8 @@
 import { Context, File } from "@code-engine/types";
-import { Stats as FSStats } from "fs";
-import { basename, join, resolve } from "path";
+import { join } from "path";
 import { readdirIterator, Stats } from "readdir-enhanced";
 import { createFile } from "./create-file";
+import { DirPathInfo, FilePathInfo, getPathInfo } from "./get-path-info";
 import { NormalizedConfig } from "./normalize-config";
 
 /**
@@ -10,14 +10,13 @@ import { NormalizedConfig } from "./normalize-config";
  */
 export function read(config: NormalizedConfig) {
   return async (context: Context) => {
-    let path = resolve(context.cwd, config.path);
-    let stats = await config.fs.promises.stat(path);
+    let path = await getPathInfo(config, context);
 
-    if (stats.isFile()) {
-      return readFile(config, stats, context);
+    if ("filename" in path) {
+      return readFile(path, config, context);
     }
     else {
-      return readDir(config, context);
+      return readDir(path, config, context);
     }
   };
 }
@@ -25,12 +24,12 @@ export function read(config: NormalizedConfig) {
 /**
  * Reads a single file, if it meets the filter criteria.
  */
-async function readFile(config: NormalizedConfig, stats: FSStats, context: Context)
+async function readFile(path: FilePathInfo, config: NormalizedConfig, context: Context)
 : Promise<File | undefined> {
-  let file = createFile(basename(config.path), stats);
+  let file = createFile(path.filename, path.stats);
 
   if (config.filter(file, context)) {
-    file.contents = await config.fs.promises.readFile(config.path);
+    file.contents = await config.fs.promises.readFile(path.absolutePath);
     return file;
   }
 }
@@ -38,9 +37,8 @@ async function readFile(config: NormalizedConfig, stats: FSStats, context: Conte
 /**
  * Reads all files in the directory that meet the filter criteria
  */
-function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File> {
-  let dir = config.path;
-  let files = find(dir, config, context);
+function readDir(path: DirPathInfo, config: NormalizedConfig, context: Context): AsyncIterable<File> {
+  let files = find(path, config, context);
 
   return {
     [Symbol.asyncIterator]() {
@@ -59,7 +57,7 @@ function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File
 
       if (stats.isFile()) {
         let file = createFile(stats.path, stats);
-        file.contents = await config.fs.promises.readFile(join(dir, stats.path));
+        file.contents = await config.fs.promises.readFile(join(path.dir, stats.path));
         return { value: file };
       }
       else {
@@ -72,7 +70,7 @@ function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File
 /**
  * Finds all files in the directory that match the filter criteria
  */
-function find(dir: string, config: NormalizedConfig, context: Context) {
+function find(path: DirPathInfo, config: NormalizedConfig, context: Context) {
   let filter;
 
   if (typeof config.filterCriteria === "function") {
@@ -87,7 +85,7 @@ function find(dir: string, config: NormalizedConfig, context: Context) {
     filter = config.filterCriteria;
   }
 
-  return readdirIterator(dir, {
+  return readdirIterator(path.dir, {
     stats: true,
     deep: config.depth,
     fs: config.fs,
