@@ -1,261 +1,180 @@
-// "use strict";
+"use strict";
 
-// const CodeEngine = require("../utils/code-engine");
-// const { getCallArg, testThreadConsistency } = require("../utils");
-// const { assert, expect } = require("chai");
-// const sinon = require("sinon");
-// const path = require("path");
+const filesystem = require("../../");
+const { createFileUrl } = require("../../lib/create-file");
+const CodeEngine = require("../utils/code-engine");
+const sinon = require("sinon");
+const { createDir, delay, globify, getFiles } = require("../utils");
+const { expect } = require("chai");
+const { join } = require("path");
 
-// describe("Plugin.processFile()", () => {
-//   testThreadConsistency((createModule) => {
+describe("filesystem.processFile()", () => {
 
-//     it("should do nothing if no plugins implement processFile", async () => {
-//       let plugin1 = {
-//         read: sinon.stub().returns([]),
-//       };
-//       let plugin2 = { name: "Plugin 2", read () {} };
+  function createFileChangePlugin (changes) {
+    return {
+      watch () {
+        return {
+          async next () {
+            let value = changes.shift();
+            if (value) {
+              return { value };
+            }
+            else {
+              return { done: true };
+            }
+          }
+        };
+      },
+    };
+  }
 
-//       let engine = CodeEngine.create();
-//       await engine.use(plugin1, plugin2);
-//       await engine.build();
+  it("should only read files that have no contents", async () => {
+    let dir = await createDir();
+    let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
-//       sinon.assert.calledOnce(plugin1.read);
-//     });
+    let source = filesystem({
+      path: dir,
+      fs: { readFile },
+    });
 
-//     it("should call the processFile() method for each file", async () => {
-//       let plugin1 = {
-//         *read () {
-//           yield { path: "file1.txt" };
-//           yield { path: "file2.txt" };
-//           yield { path: "file3.txt" };
-//         },
-//       };
+    let fileChanges = createFileChangePlugin([
+      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: createFileUrl(join(dir, "file2.txt")), path: "file2.txt", text: "I already have contents" },
+      { change: "modified", source: createFileUrl(join(dir, "file3.txt")), path: "file3.txt", text: "" },
+    ]);
 
-//       let plugin2 = await createModule((file) => {
-//         file.text = "Plugin 2 was here";
-//         return file;
-//       });
+    let spy = sinon.spy();
+    let engine = CodeEngine.create();
+    await engine.use(source, fileChanges, spy);
+    engine.watch();
 
-//       let spy = sinon.spy();
+    // Allow time for all the file changes to be procesed
+    await delay(100);
 
-//       let engine = CodeEngine.create();
-//       await engine.use(plugin1, plugin2, spy);
-//       await engine.build();
+    // fs.readFile() should have only been called for the empty files
+    sinon.assert.calledTwice(readFile);
+    expect(readFile.firstCall.args[0].href).to.match(/\/file1.txt$/);
+    expect(readFile.secondCall.args[0].href).to.match(/\/file3.txt$/);
 
-//       sinon.assert.calledThrice(spy);
-//       let files = getCallArg(spy);
-//       for (let file of files) {
-//         expect(file.text).to.equal("Plugin 2 was here");
-//       }
-//     });
+    // Verify that the file contents were written
+    let files = getFiles(spy);
+    expect(files).to.have.lengthOf(3);
 
-//     it("should call the processFile() method of all plugins", async () => {
-//       let plugin1 = {
-//         *read () {
-//           yield { path: "file1.txt" };
-//           yield { path: "file2.txt" };
-//           yield { path: "file3.txt" };
-//           yield { path: "file4.txt" };
-//         },
-//         processFile: sinon.stub().returnsArg(0),
-//       };
-//       let plugin2 = sinon.stub().returnsArg(0);
-//       let plugin3 = await createModule((file) => {
-//         file.text = "Plugin 4 was here";
-//         return file;
-//       });
-//       let plugin4 = sinon.spy();
+    expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "Some contents");
+    expect(files.find((file) => file.name === "file2.txt")).to.have.property("text", "I already have contents");
+    expect(files.find((file) => file.name === "file3.txt")).to.have.property("text", "Some contents");
+  });
 
-//       let engine = CodeEngine.create();
-//       await engine.use(plugin1, plugin2, plugin3, plugin4);
-//       await engine.build();
+  it("should only read files that match the path", async () => {
+    let dir = await createDir();
+    let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
-//       sinon.assert.callCount(plugin1.processFile, 4);
-//       sinon.assert.callCount(plugin2, 4);
-//       sinon.assert.callCount(plugin4, 4);
+    let source = filesystem({
+      path: dir,
+      fs: { readFile },
+    });
 
-//       let files = getCallArg(plugin4);
-//       for (let file of files) {
-//         expect(file.text).to.equal("Plugin 4 was here");
-//       }
-//     });
+    let fileChanges = createFileChangePlugin([
+      { change: "modified", source: createFileUrl(join(dir, "..", "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: createFileUrl(join(dir, "file2.txt")), path: "file2.txt" },
+      { change: "modified", source: "file://some/other/path", path: "file3.txt" },
+    ]);
 
-//     it("should only pass the files to each plugin that match its filter", async () => {
-//       let plugin1 = {
-//         *read () {
-//           yield { path: "file.txt" };
-//           yield { path: "file.html" };
-//           yield { path: "subdir/file.txt" };
-//           yield { path: "subdir/file.html" };
-//           yield { path: "subdir/subsubdir/file.txt" };
-//           yield { path: "subdir/subsubdir/file.html" };
-//         },
-//         filter: true,
-//         processFile: await createModule((file) => { file.text += "1"; return file; }),
-//       };
-//       let plugin2 = {
-//         filter: false,
-//         processFile: await createModule((file) => { file.text += "2"; return file; }),
-//       };
-//       let plugin3 = {
-//         filter: "**/*.html",
-//         processFile: await createModule((file) => { file.text += "3"; return file; }),
-//       };
-//       let plugin4 = {
-//         filter: "*/*.txt",
-//         processFile: await createModule((file) => { file.text += "4"; return file; }),
-//       };
+    let spy = sinon.spy();
+    let engine = CodeEngine.create();
+    await engine.use(source, fileChanges, spy);
+    engine.watch();
 
-//       let spy = sinon.spy();
+    // Allow time for all the file changes to be procesed
+    await delay(100);
 
-//       let engine = CodeEngine.create();
-//       await engine.use(plugin1, plugin2, plugin3, plugin4, spy);
-//       await engine.build();
+    // fs.readFile() should have only been called for the file that's in our path
+    sinon.assert.calledOnce(readFile);
+    expect(readFile.firstCall.args[0].href).to.match(/\/file2.txt$/);
 
-//       sinon.assert.callCount(spy, 6);
+    // Verify that the file contents were written
+    let files = getFiles(spy);
+    expect(files).to.have.lengthOf(3);
 
-//       let files = getCallArg(spy);
-//       expect(files.find((file) => file.path === "file.txt").text).to.equal("1");
-//       expect(files.find((file) => file.path === "file.html").text).to.equal("13");
-//       expect(files.find((file) => file.path === path.normalize("subdir/file.txt")).text).to.equal("14");
-//       expect(files.find((file) => file.path === path.normalize("subdir/file.html")).text).to.equal("13");
-//       expect(files.find((file) => file.path === path.normalize("subdir/subsubdir/file.txt")).text).to.equal("1");
-//       expect(files.find((file) => file.path === path.normalize("subdir/subsubdir/file.html")).text).to.equal("13");
-//     });
+    expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+    expect(files.find((file) => file.name === "file2.txt")).to.have.property("text", "Some contents");
+    expect(files.find((file) => file.name === "file3.txt")).to.have.property("text", "");
+  });
 
-//     it("should call the processFile() methods in order for each file", async () => {
-//       let source = {
-//         name: "File Source",
-//         *read () {
-//           yield { path: "file1.txt" };
-//           yield { path: "file2.txt" };
-//           yield { path: "file3.txt" };
-//         },
-//       };
-//       let processor1 = {
-//         name: "File Processor 1",
-//         processFile: await createModule((file) => { file.text += "1"; return file; }),
-//       };
-//       let processor2 = {
-//         name: "File Processor 2",
-//         processFile: await createModule((file) => { file.text += "2"; return file; }),
-//       };
-//       let processor3 = {
-//         name: "File Processor 3",
-//         processFile: await createModule((file) => { file.text += "3"; return file; }),
-//       };
+  it("should only read files that match the glob pattern", async () => {
+    let dir = await createDir();
+    let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
-//       let spy = sinon.spy();
-//       let engine = CodeEngine.create();
-//       await engine.use(source, processor1, processor2, processor3, spy);
-//       await engine.build();
+    let source = filesystem({
+      path: globify(dir, "**/*.html"),
+      fs: { readFile },
+    });
 
-//       let files = getCallArg(spy);
-//       expect(files).to.have.lengthOf(3);
-//       for (let file of files) {
-//         expect(file.text).to.equal("123");
-//       }
-//     });
+    let fileChanges = createFileChangePlugin([
+      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
+      { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+    ]);
 
-//     it("should be called with the plugin's `this` context", async () => {
-//       let plugin1 = {
-//         name: "Plugin A",
-//         id: 11111,
-//         read () { return { path: "file1" }; },
-//         processFile: await createModule(function (file) {
-//           file.text = this === undefined ? "undefined\n" : `${this.id}: ${this.name}\n`;
-//           return file;
-//         }),
-//       };
+    let spy = sinon.spy();
+    let engine = CodeEngine.create();
+    await engine.use(source, fileChanges, spy);
+    engine.watch();
 
-//       let plugin2 = {
-//         name: "Plugin B",
-//         id: 22222,
-//         foo: "bar",
-//         processFile: await createModule(function (file) {
-//           file.text += this === undefined ? "undefined" : `${this.id}: ${this.name} ${this.foo}\n`;
-//           return file;
-//         }),
-//       };
+    // Allow time for all the file changes to be procesed
+    await delay(100);
 
-//       let spy = sinon.spy();
-//       let engine = CodeEngine.create();
-//       await engine.use(plugin1, plugin2, spy);
-//       await engine.build();
+    // fs.readFile() should have only been called for the HTML file
+    sinon.assert.calledOnce(readFile);
+    expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
 
-//       let files = getCallArg(spy);
-//       expect(files).to.have.lengthOf(1);
-//       expect(files[0].text).to.be.oneOf([
-//         "11111: Plugin A\n22222: Plugin B bar\n",   // Main thread
-//         "undefined\nundefined",                     // Worker thread
-//       ]);
-//     });
+    // Verify that the file contents were written
+    let files = getFiles(spy);
+    expect(files).to.have.lengthOf(3);
 
-//     it("should re-throw synchronous errors", async () => {
-//       let source = {
-//         name: "File Source",
-//         *read () {
-//           yield { path: "file1.txt" };
-//           yield { path: "file2.txt" };
-//           yield { path: "file3.txt" };
-//         },
-//       };
+    expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+    expect(files.find((file) => file.name === "file2.html")).to.have.property("text", "Some contents");
+    expect(files.find((file) => file.name === "file3.jpg")).to.have.property("text", "");
+  });
 
-//       let plugin = {
-//         name: "Synchronous Error Test",
-//         processFile: await createModule((file) => {
-//           if (file.path === "file2.txt") {
-//             throw new SyntaxError("Boom!");
-//           }
-//         })
-//       };
+  it("should only read files that match the filter criteria", async () => {
+    let dir = await createDir();
+    let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
-//       let engine = CodeEngine.create();
-//       await engine.use(source, plugin);
+    let source = filesystem({
+      path: dir,
+      filter (file) {
+        return [".html", ".jpg"].includes(file.extension);
+      },
+      fs: { readFile },
+    });
 
-//       try {
-//         await engine.build();
-//         assert.fail("CodeEngine should have re-thrown the error");
-//       }
-//       catch (error) {
-//         expect(error).to.be.an.instanceOf(Error);
-//         expect(error).not.to.be.an.instanceOf(SyntaxError);
-//         expect(error.message).to.equal("An error occurred in Synchronous Error Test while processing file2.txt. \nBoom!");
-//       }
-//     });
+    let fileChanges = createFileChangePlugin([
+      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
+      { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+    ]);
 
-//     it("should re-throw asynchronous errors", async () => {
-//       let source = {
-//         name: "File Source",
-//         *read () {
-//           yield { path: "file1.txt" };
-//           yield { path: "file2.txt" };
-//           yield { path: "file3.txt" };
-//         },
-//       };
+    let spy = sinon.spy();
+    let engine = CodeEngine.create();
+    await engine.use(source, fileChanges, spy);
+    engine.watch();
 
-//       let plugin = await createModule((file) => {
-//         if (file.path === "file3.txt") {
-//           return Promise.reject(new TypeError("Boom!"));
-//         }
-//         else {
-//           return Promise.resolve();
-//         }
-//       });
+    // Allow time for all the file changes to be procesed
+    await delay(100);
 
-//       let engine = CodeEngine.create();
-//       await engine.use(source, plugin);
+    // fs.readFile() should have only been called for the HTML and JPG files
+    sinon.assert.calledTwice(readFile);
+    expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
+    expect(readFile.secondCall.args[0].href).to.match(/\/file3.jpg$/);
 
-//       try {
-//         await engine.build();
-//         assert.fail("CodeEngine should have re-thrown the error");
-//       }
-//       catch (error) {
-//         expect(error).to.be.an.instanceOf(Error);
-//         expect(error).not.to.be.an.instanceOf(TypeError);
-//         expect(error.message).to.equal("An error occurred in Plugin 2 while processing file3.txt. \nBoom!");
-//       }
-//     });
+    // Verify that the file contents were written
+    let files = getFiles(spy);
+    expect(files).to.have.lengthOf(3);
 
-//   });
-// });
+    expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+    expect(files.find((file) => file.name === "file2.html")).to.have.property("text", "Some contents");
+    expect(files.find((file) => file.name === "file3.jpg")).to.have.property("text", "Some contents");
+  });
+
+});
