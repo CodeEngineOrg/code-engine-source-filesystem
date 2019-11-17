@@ -13,6 +13,7 @@ function filesystem(conf?: FileSystemConfig): Plugin {
 
   return {
     name: "Filesystem Source",
+    filter: config.filter,
     read: read(config),
     watch: watch(config),
     processFile: processFile(config),
