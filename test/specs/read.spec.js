@@ -5,7 +5,7 @@ const CodeEngine = require("../utils/code-engine");
 const sinon = require("sinon");
 const { createDir, globify, getFiles } = require("../utils");
 const { assert, expect } = require("chai");
-const { join, normalize } = require("path");
+const { basename, join, normalize } = require("path");
 
 describe("filesystem.read()", () => {
 
@@ -314,6 +314,50 @@ describe("filesystem.read()", () => {
       let logoSquare = files.find((file) => file.name === "logo-square.png");
       expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
       expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
+    });
+
+    it("should read files simultaneously, up to the concurrency limit", async () => {
+      let dir = await createDir([
+        "file-1.txt",
+        "file-2.txt",
+        "file-3.txt",
+        "file-4.txt",
+        "file-5.txt",
+      ]);
+
+      let readTimes = [];                                             // Keeps track of when each file is read
+
+      let source = filesystem({
+        path: dir,
+        fs: {
+          readFile (_, callback) {
+            readTimes.push(Date.now());                               // Track when each file is read
+            setTimeout(() => callback(null, ""), 500);                // Each file will take 500ms to read
+          }
+        }
+      });
+
+      let engine = CodeEngine.create({ concurrency: 3 });             // We can read 3 files simultaneously
+      await engine.use(source);
+      let summary = await engine.build();
+
+      // Make sure all 5 files were read
+      expect(summary.input.fileCount).to.equal(5);
+
+      // CI environments are slow, so use a larger time buffer
+      const TIME_BUFFER = process.env.CI ? 100 : 50;
+
+      // The first three files should have been read simultaneously
+      expect(readTimes[0] - summary.time.start).to.be.below(TIME_BUFFER);
+      expect(readTimes[1] - summary.time.start).to.be.below(TIME_BUFFER);
+      expect(readTimes[2] - summary.time.start).to.be.below(TIME_BUFFER);
+
+      // The last two files should have been read simultaneously
+      expect(readTimes[3] - summary.time.start).to.be.above(500).and.below(500 + TIME_BUFFER);
+      expect(readTimes[4] - summary.time.start).to.be.above(500).and.below(500 + TIME_BUFFER);
+
+      // The total read time should have been around 1 second
+      expect(summary.time.elapsed).to.be.above(1000).and.below(1000 + TIME_BUFFER);
     });
 
     it("should read nothing if the directory is empty", async () => {
