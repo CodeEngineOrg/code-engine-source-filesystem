@@ -50,6 +50,7 @@ function readDir(config: NormalizedConfig, context: Context): AsyncIterable<File
 
   async function readNextFile(): Promise<IteratorResult<File>> {
     let result = await files.next();
+
     if (result.done) {
       return { done: true, value: undefined };
     }

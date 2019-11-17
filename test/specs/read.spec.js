@@ -3,7 +3,7 @@
 const filesystem = require("../../");
 const CodeEngine = require("../utils/code-engine");
 const sinon = require("sinon");
-const { createDir, globify, getFiles } = require("../utils/utils");
+const { createDir, globify, getFiles } = require("../utils");
 const { assert, expect } = require("chai");
 const { join, normalize } = require("path");
 
