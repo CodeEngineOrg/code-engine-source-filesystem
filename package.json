@@ -42,12 +42,12 @@
   },
   "engineStrict": true,
   "devDependencies": {
-    "@code-engine/lib": "0.0.2",
+    "@code-engine/lib": "0.0.4",
     "@code-engine/types": "0.0.1",
-    "@types/chai": "^4.2.4",
+    "@types/chai": "^4.2.5",
     "@types/is-glob": "^4.0.1",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.7",
+    "@types/node": "^12.12.8",
     "chai": "^4.2.0",
     "coveralls": "^3.0.7",
     "eslint": "^6.6.0",
@@ -62,14 +62,14 @@
     "tslint": "^5.20.1",
     "tslint-modular": "^1.4.1",
     "typescript": "^3.7.2",
-    "typescript-tslint-plugin": "^0.5.0",
-    "version-bump-prompt": "^5.0.3"
+    "typescript-tslint-plugin": "^0.5.5",
+    "version-bump-prompt": "^5.0.6"
   },
   "dependencies": {
-    "@code-engine/utils": "0.0.2",
+    "@code-engine/utils": "0.0.5",
     "@code-engine/validate": "0.0.1",
     "file-path-filter": "^2.2.2",
     "is-glob": "^4.0.1",
-    "readdir-enhanced": "^5.1.0"
+    "readdir-enhanced": "^5.1.1"
   }
 }
