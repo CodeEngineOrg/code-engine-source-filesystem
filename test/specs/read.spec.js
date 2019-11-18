@@ -7,6 +7,9 @@ const { createDir, globify, getFiles } = require("../utils");
 const { assert, expect } = require("chai");
 const { join, normalize } = require("path");
 
+// CI environments are slow, so use a larger time buffer
+const TIME_BUFFER = process.env.CI ? 100 : 50;
+
 describe("filesystem.read()", () => {
 
   describe("single file", () => {
@@ -343,9 +346,6 @@ describe("filesystem.read()", () => {
 
       // Make sure all 5 files were read
       expect(summary.input.fileCount).to.equal(5);
-
-      // CI environments are slow, so use a larger time buffer
-      const TIME_BUFFER = process.env.CI ? 100 : 50;
 
       // The first three files should have been read simultaneously
       expect(readTimes[0] - summary.time.start).to.be.below(TIME_BUFFER);
