@@ -8,6 +8,11 @@ const { createDir, delay, globify, getFiles } = require("../utils");
 const { expect } = require("chai");
 const { join } = require("path");
 
+const watchDelay = 100;
+
+// CI environments are slow, so use a larger time buffer
+const TIME_BUFFER = process.env.CI ? 100 : 50;
+
 describe("filesystem.processFile()", () => {
 
   function createFileChangePlugin (changes) {
@@ -44,12 +49,12 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create();
+    let engine = CodeEngine.create({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
     // Allow time for all the file changes to be procesed
-    await delay(100);
+    await delay(watchDelay + TIME_BUFFER);
 
     // fs.readFile() should have only been called for the empty files
     sinon.assert.calledTwice(readFile);
@@ -81,12 +86,12 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create();
+    let engine = CodeEngine.create({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
     // Allow time for all the file changes to be procesed
-    await delay(100);
+    await delay(watchDelay + TIME_BUFFER);
 
     // fs.readFile() should have only been called for the file that's in our path
     sinon.assert.calledOnce(readFile);
@@ -117,12 +122,12 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create();
+    let engine = CodeEngine.create({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
     // Allow time for all the file changes to be procesed
-    await delay(100);
+    await delay(watchDelay + TIME_BUFFER);
 
     // fs.readFile() should have only been called for the HTML file
     sinon.assert.calledOnce(readFile);
@@ -156,12 +161,12 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create();
+    let engine = CodeEngine.create({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
     // Allow time for all the file changes to be procesed
-    await delay(100);
+    await delay(watchDelay + TIME_BUFFER);
 
     // fs.readFile() should have only been called for the HTML and JPG files
     sinon.assert.calledTwice(readFile);
