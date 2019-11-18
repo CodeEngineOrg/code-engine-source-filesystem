@@ -8,10 +8,9 @@ const { createDir, delay, globify, getFiles } = require("../utils");
 const { expect } = require("chai");
 const { join } = require("path");
 
-const watchDelay = 100;
-
 // CI environments are slow, so use a larger time buffer
 const TIME_BUFFER = process.env.CI ? 100 : 50;
+const watchDelay = process.env.CI ? 300 : 100;
 
 describe("filesystem.processFile()", () => {
 
