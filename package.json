@@ -43,7 +43,7 @@
   "engineStrict": true,
   "devDependencies": {
     "@code-engine/lib": "0.0.4",
-    "@code-engine/types": "0.0.1",
+    "@code-engine/types": "0.0.2",
     "@types/chai": "^4.2.5",
     "@types/is-glob": "^4.0.1",
     "@types/mocha": "^5.2.7",
@@ -68,6 +68,7 @@
   "dependencies": {
     "@code-engine/utils": "0.0.5",
     "@code-engine/validate": "0.0.1",
+    "chokidar": "^3.3.0",
     "file-path-filter": "^2.2.2",
     "is-glob": "^4.0.1",
     "readdir-enhanced": "^5.1.1"
