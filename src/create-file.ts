@@ -16,7 +16,7 @@ export function createFile(path: string, stats: Stats): File {
  * Creates a CodeEngine `ChangedFile` object from a node `Stats` object.
  * @internal
  */
-export function createChangedFile(path: string, stats: Stats, change: FileChange): ChangedFile {
+export function createChangedFile(path: string, stats: Stats | undefined, change: FileChange): ChangedFile {
   let info = createFileInfo(path, stats) as ChangedFileInfo;
   info.change = change;
   return createCodeEngineChangedFile(info);
@@ -26,14 +26,19 @@ export function createChangedFile(path: string, stats: Stats, change: FileChange
  * Creates a CodeEngine `FileInfo` object from a node `Stats` object.
  * @internal
  */
-function createFileInfo(path: string, stats: Stats, change?: FileChange): FileInfo {
-  return {
+function createFileInfo(path: string, stats?: Stats): FileInfo {
+  let info: FileInfo = {
     path,
     source: createFileUrl(path),
-    createdAt: stats.birthtime,
-    modifiedAt: stats.mtime,
-    metadata: createMetadata(stats),
   };
+
+  if (stats) {
+    info.createdAt = stats.birthtime;
+    info.modifiedAt = stats.mtime;
+    info.metadata = createMetadata(stats);
+  }
+
+  return info;
 }
 
 /**
