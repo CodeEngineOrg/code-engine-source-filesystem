@@ -48,6 +48,7 @@ class Watcher {
   private config: NormalizedConfig;
   private context: Context;
   private dir: string;
+  private disposed = false;
 
   public get iterable() {
     return this.output.iterable;
@@ -60,67 +61,51 @@ class Watcher {
     this.context = context;
     this.dir = path.dir;
 
-    this.chokidar.on("add", this.newFile.bind(this));
-    this.chokidar.on("change", this.fileChanged.bind(this));
-    this.chokidar.on("unlink", this.fileDeleted.bind(this));
-    this.chokidar.on("addDir", this.newSubDirectory.bind(this));
-    this.chokidar.on("unlinkDir", this.subDirectoryDeleted.bind(this));
-    this.chokidar.on("error", this.error.bind(this));
+    this.chokidar.on("add", this.changeDetected.bind(this, FileChange.Created));
+    this.chokidar.on("change", this.changeDetected.bind(this, FileChange.Modified));
+    this.chokidar.on("unlink", this.changeDetected.bind(this, FileChange.Deleted));
+    this.chokidar.on("error", this.errorHandler.bind(this));
   }
 
   /**
    * Disposes the watcher. It cannot be used after this.
    */
   public async dispose() {
-    await Promise.all([
-      this.chokidar.close(),
-      this.output.end(),
-    ]);
-  }
-
-  /**
-   * A new file was created in the directory path.
-   */
-  private async newFile(path: string, stats: Stats) {
-    let file = createChangedFile(path, stats, FileChange.Created);
-
-    if (this.config.filter(file, this.context)) {
-      file.contents = await this.config.fs.promises.readFile(join(this.dir, path));
-      await this.output.write(file);
+    if (!this.disposed) {
+      this.disposed = true;
+      await Promise.all([
+        this.chokidar.close(),
+        this.output.end(),
+      ]);
     }
   }
 
   /**
-   * A file in the directory path was modified.
+   * A filesystem change was detected within the directory path.
    */
-  private async fileChanged(path: string, stats: Stats) {
-    return;
+  private async changeDetected(change: FileChange, path: string, stats: Stats) {
+    try {
+      this.context.logger.debug(`Change detected: ${change} ${path}`, { change, dir: this.dir, path });
+      let file = createChangedFile(path, stats, change);
+
+      if (this.config.filter(file, this.context)) {
+        if (change !== FileChange.Deleted) {
+          file.contents = await this.config.fs.promises.readFile(join(this.dir, path));
+        }
+
+        await this.output.write(file);
+      }
+    }
+    catch (error) {
+      await this.errorHandler(error as Error);
+    }
   }
 
-  /**
-   * A file in the directory path was deleted.
-   */
-  private async fileDeleted(path: string, stats: Stats) {
-    return;
-  }
-
-  /**
-   * A new sub-directory has been created in the directory path.
-   */
-  private async newSubDirectory(path: string, stats: Stats) {
-    return;
-  }
-
-  /**
-   * A sub-directory in the directory path has beeen deleted.
-   */
-  private async subDirectoryDeleted(path: string, stats: Stats) {
-    return;
-  }
-
-  private async error(error: Error) {
-    // Re-throw the error into the iterable
-    await this.output.throw(error);
+  private async errorHandler(error: Error) {
+    if (!this.disposed) {
+      // Re-throw the error into the iterable
+      await this.output.throw(error);
+    }
   }
 }
 
