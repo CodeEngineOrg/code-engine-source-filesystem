@@ -32,15 +32,20 @@ export interface FilePathInfo extends PathInfo {
 export async function getPathInfo(config: NormalizedConfig, context: Context): Promise<DirPathInfo | FilePathInfo> {
   let absolutePath = resolve(context.cwd, config.path);
   let stats = await config.fs.promises.stat(absolutePath);
-  let dir, filename;
 
   if (stats.isFile()) {
-    dir = dirname(absolutePath);
-    filename = basename(absolutePath);
+    return {
+      stats,
+      absolutePath,
+      dir: dirname(absolutePath),
+      filename: basename(absolutePath),
+    };
   }
   else {
-    dir = dirname(absolutePath);
+    return {
+      stats,
+      absolutePath,
+      dir: absolutePath,
+    };
   }
-
-  return { absolutePath, dir, filename, stats };
 }
