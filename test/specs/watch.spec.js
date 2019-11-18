@@ -1,454 +1,314 @@
-// "use strict";
-
-// const CodeEngine = require("../utils/code-engine");
-// const { delay, getCallArg } = require("../utils");
-// const { expect } = require("chai");
-// const sinon = require("sinon");
-
-// // CI environments are slow, so use a larger time buffer
-// const TIME_BUFFER = process.env.CI ? 100 : 50;
-
-// describe("Plugin.watch()", () => {
-
-//   function createEvents (engine) {
-//     let events = {
-//       buildStarting: sinon.spy(),
-//       buildFinished: sinon.spy(),
-//       error: sinon.spy(),
-//     };
-
-//     engine.on("error", events.error);
-//     engine.on("buildStarting", events.buildStarting);
-//     engine.on("buildFinished", events.buildFinished);
-
-//     return events;
-//   }
-
-//   it("should do nothing if no plugins implement watch", async () => {
-//     let plugin1 = { clean () {} };
-//     let plugin2 = { read () {} };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin1, plugin2);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-//   });
-
-//   it("should call the watch() method of all plugins", async () => {
-//     let plugin1 = {
-//       watch: sinon.spy(),
-//     };
-//     let plugin2 = {
-//       watch: sinon.spy(),
-//     };
-//     let plugin3 = {
-//       watch: sinon.spy(),
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin1, plugin2, plugin3);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.calledOnce(plugin1.watch);
-//     sinon.assert.calledOnce(plugin2.watch);
-//     sinon.assert.calledOnce(plugin3.watch);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-//   });
-
-//   it("should be called with the plugin's `this` context", async () => {
-//     let plugin1 = {
-//       watch: sinon.spy(),
-//     };
-//     let plugin2 = {
-//       watch: sinon.spy(),
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     await engine.use(plugin1, plugin2);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.calledOn(plugin1.watch, plugin1);
-//     sinon.assert.calledOn(plugin2.watch, plugin2);
-//   });
-
-//   it("should start a new build with changed files", async () => {
-//     let plugin = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created" };
-//         yield { path: "file2.txt", change: "modified" };
-//         yield { path: "file3.txt", change: "deleted" };
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-
-//     let preBuild = events.buildStarting.firstCall.args[0];
-//     let postBuild = events.buildFinished.firstCall.args[0];
-
-//     for (let build of [preBuild, postBuild]) {
-//       expect(build.fullBuild).to.equal(false);
-//       expect(build.partialBuild).to.equal(true);
-//       expect(build.changedFiles).to.have.lengthOf(3);
-//       expect(build.changedFiles[0]).to.have.property("name", "file1.txt");
-//       expect(build.changedFiles[0]).to.have.property("change", "created");
-//       expect(build.changedFiles[1]).to.have.property("name", "file2.txt");
-//       expect(build.changedFiles[1]).to.have.property("change", "modified");
-//       expect(build.changedFiles[2]).to.have.property("name", "file3.txt");
-//       expect(build.changedFiles[2]).to.have.property("change", "deleted");
-//     }
-//   });
-
-//   it("should not include deleted files in the build", async () => {
-//     let plugin1 = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created" };
-//         yield { path: "file2.txt", change: "modified" };
-//         yield { path: "file3.txt", change: "deleted" };
-//       }
-//     };
-//     let plugin2 = sinon.stub().returnsArg(0);
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin1, plugin2);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-//     sinon.assert.calledTwice(plugin2);
-
-//     let files = getCallArg(plugin2);
-//     expect(files).to.have.lengthOf(2);
-//     expect(files[0]).to.have.property("name", "file1.txt");
-//     expect(files[0]).to.have.property("change", "created");
-//     expect(files[1]).to.have.property("name", "file2.txt");
-//     expect(files[1]).to.have.property("change", "modified");
-
-//     let postBuild = events.buildFinished.firstCall.args[0];
-//     expect(postBuild.input.fileCount).to.equal(2);
-//     expect(postBuild.output.fileCount).to.equal(2);
-//   });
-
-//   it("should include changed file contents in the buildStarting event", async () => {
-//     let plugin = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created", text: "Hello, world!" };
-//         yield { path: "file2.txt", change: "modified", text: "Hello again, world!" };
-//         yield { path: "file3.txt", change: "deleted", text: "Goodbye, cruel world!" };
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-
-//     let build = events.buildStarting.firstCall.args[0];
-//     expect(build.changedFiles[0]).to.have.property("name", "file1.txt");
-//     expect(build.changedFiles[0]).to.have.property("text", "Hello, world!");
-//     expect(build.changedFiles[1]).to.have.property("name", "file2.txt");
-//     expect(build.changedFiles[1]).to.have.property("text", "Hello again, world!");
-//     expect(build.changedFiles[2]).to.have.property("name", "file3.txt");
-//     expect(build.changedFiles[2]).to.have.property("text", "Goodbye, cruel world!");
-//   });
-
-//   it("should NOT include changed file contents in the buildFinished event", async () => {
-//     let plugin = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created", text: "Hello, world!" };
-//         yield { path: "file2.txt", change: "modified", text: "Hello again, world!" };
-//         yield { path: "file3.txt", change: "deleted", text: "Goodbye, cruel world!" };
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-
-//     let build = events.buildFinished.firstCall.args[0];
-//     expect(build.changedFiles[0]).to.have.property("name", "file1.txt");
-//     expect(build.changedFiles[0]).to.have.property("text", "");
-//     expect(build.changedFiles[1]).to.have.property("name", "file2.txt");
-//     expect(build.changedFiles[1]).to.have.property("text", "");
-//     expect(build.changedFiles[2]).to.have.property("name", "file3.txt");
-//     expect(build.changedFiles[2]).to.have.property("text", "");
-//   });
-
-//   it("should include changed file contents in the build", async () => {
-//     let plugin1 = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created", text: "Hello, world!" };
-//         yield { path: "file2.txt", change: "modified", text: "Hello again, world!" };
-//         yield { path: "file3.txt", change: "deleted", text: "Goodbye, cruel world!" };
-//       }
-//     };
-//     let plugin2 = sinon.stub().returnsArg(0);
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin1, plugin2);
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-//     sinon.assert.calledTwice(plugin2);
-
-//     let files = getCallArg(plugin2);
-//     expect(files).to.have.lengthOf(2);
-//     expect(files[0]).to.have.property("name", "file1.txt");
-//     expect(files[0]).to.have.property("text", "Hello, world!");
-//     expect(files[1]).to.have.property("name", "file2.txt");
-//     expect(files[1]).to.have.property("text", "Hello again, world!");
-//   });
-
-//   it("should include changes made in the buildStarting event in the build", async () => {
-//     let plugin1 = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt", change: "created", text: "Hello, world!" };
-//         yield { path: "file2.txt", change: "modified", text: "Hello again, world!" };
-//         yield { path: "file3.txt", change: "deleted", text: "Goodbye, cruel world!" };
-//       }
-//     };
-//     let plugin2 = sinon.stub().returnsArg(0);
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin1, plugin2);
-
-//     engine.on("buildStarting", ({ changedFiles }) => {
-//       for (let file of changedFiles) {
-//         file.change = "created";
-//         file.extension = ".html";
-//         file.text += "!!!";
-//         file.metadata.foo = "bar";
-//       }
-//     });
-
-//     engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-//     sinon.assert.calledThrice(plugin2);
-
-//     let files = getCallArg(plugin2);
-//     expect(files).to.have.lengthOf(3);
-
-//     expect(files[0]).to.have.property("change", "created");
-//     expect(files[0]).to.have.property("name", "file1.html");
-//     expect(files[0]).to.have.property("text", "Hello, world!!!!");
-//     expect(files[0].metadata).to.have.property("foo", "bar");
-
-//     expect(files[1]).to.have.property("change", "created");
-//     expect(files[1]).to.have.property("name", "file2.html");
-//     expect(files[1]).to.have.property("text", "Hello again, world!!!!");
-//     expect(files[1].metadata).to.have.property("foo", "bar");
-
-//     expect(files[2]).to.have.property("change", "created");
-//     expect(files[2]).to.have.property("name", "file3.html");
-//     expect(files[2]).to.have.property("text", "Goodbye, cruel world!!!!");
-//     expect(files[2].metadata).to.have.property("foo", "bar");
-
-//     let postBuild = events.buildFinished.firstCall.args[0];
-//     expect(postBuild.input.fileCount).to.equal(3);
-//     expect(postBuild.output.fileCount).to.equal(3);
-//   });
-
-//   it("should do multiple builds", async () => {
-//     let plugin = {
-//       async* watch () {
-//         // 0ms
-//         yield { path: "file1.txt", change: "created" };
-//         yield { path: "file2.txt", change: "modified" };
-//         await delay(50);
-
-//         // 50ms
-//         yield { path: "file3.txt", change: "deleted" };
-//         await delay(300);
-
-//         // 350ms
-//         yield { path: "file4.txt", change: "created" };
-//         await delay(50);
-
-//         // 400ms
-//         yield { path: "file5.txt", change: "modified" };
-//         await delay(300);
-
-//         // 700ms
-//         yield { path: "file6.txt", change: "deleted" };
-//         await delay(300);
-
-//         // 1000ms
-//         yield { path: "file7.txt", change: "modified" };
-//         yield { path: "file8.txt", change: "modified" };
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     engine.watch();
-
-//     // 100ms: A file was yielded at 50ms, so the build won't start until 150ms
-//     await delay(100);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-
-//     // 200ms: A build occurred at 150ms
-//     await delay(100);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-//     expect(events.buildStarting.firstCall.args[0].changedFiles).to.have.lengthOf(3);
-//     expect(events.buildFinished.firstCall.args[0].changedFiles).to.have.lengthOf(3);
-
-//     // 400ms: A file was yielded at 350ms and another at 400ms, so the build won't start until 500ms
-//     await delay(200);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledOnce(events.buildStarting);
-//     sinon.assert.calledOnce(events.buildFinished);
-
-//     // 600ms: A build occurred at 500ms
-//     await delay(200);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledTwice(events.buildStarting);
-//     sinon.assert.calledTwice(events.buildFinished);
-//     expect(events.buildStarting.secondCall.args[0].changedFiles).to.have.lengthOf(2);
-//     expect(events.buildFinished.secondCall.args[0].changedFiles).to.have.lengthOf(2);
-
-//     // 900ms: A build occurred at 700ms
-//     await delay(300);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.calledThrice(events.buildStarting);
-//     sinon.assert.calledThrice(events.buildFinished);
-//     expect(events.buildStarting.thirdCall.args[0].changedFiles).to.have.lengthOf(1);
-//     expect(events.buildFinished.thirdCall.args[0].changedFiles).to.have.lengthOf(1);
-
-//     // 1100ms: A build occurred at 1100ms
-//     await delay(200);
-//     sinon.assert.notCalled(events.error);
-//     sinon.assert.callCount(events.buildStarting, 4);
-//     sinon.assert.callCount(events.buildFinished, 4);
-//     expect(events.buildStarting.getCalls()[3].args[0].changedFiles).to.have.lengthOf(2);
-//     expect(events.buildFinished.getCalls()[3].args[0].changedFiles).to.have.lengthOf(2);
-//   });
-
-//   it("should emit an error if an invalid file is yielded", async () => {
-//     let plugin = {
-//       async* watch () {
-//         await delay();
-//         yield { path: "file1.txt" };
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     await engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.calledOnce(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-
-//     let error = events.error.firstCall.args[0];
-//     expect(error).to.be.an.instanceOf(Error);
-//     expect(error.message).to.equal(
-//       "An error occurred in Plugin 1 while watching source files for changes. \n" +
-//       'Invalid file change value: undefined. Expected "created", "modified", or "deleted".'
-//     );
-//   });
-
-//   it("should emit synchronous errors", async () => {
-//     let plugin = {
-//       name: "Synchronous Error Test",
-//       watch () {
-//         throw new SyntaxError("Boom!");
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     await engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.calledOnce(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-
-//     let error = events.error.firstCall.args[0];
-//     expect(error).to.be.an.instanceOf(Error);
-//     expect(error).not.to.be.an.instanceOf(SyntaxError);
-//     expect(error.message).to.equal("An error occurred in Synchronous Error Test while watching source files for changes. \nBoom!");
-//   });
-
-//   it("should emit asynchronous errors", async () => {
-//     let plugin = {
-//       name: "Asynchronous Error Test",
-//       // eslint-disable-next-line require-yield
-//       async* watch () {
-//         await delay();
-//         throw new URIError("Boom!");
-//       }
-//     };
-
-//     let engine = CodeEngine.create({ watchDelay: 100 });
-//     let events = createEvents(engine);
-//     await engine.use(plugin);
-//     await engine.watch();
-//     await delay(100 + TIME_BUFFER);
-
-//     sinon.assert.calledOnce(events.error);
-//     sinon.assert.notCalled(events.buildStarting);
-//     sinon.assert.notCalled(events.buildFinished);
-
-//     let error = events.error.firstCall.args[0];
-//     expect(error).to.be.an.instanceOf(Error);
-//     expect(error).not.to.be.an.instanceOf(URIError);
-//     expect(error.message).to.equal("An error occurred in Asynchronous Error Test while watching source files for changes. \nBoom!");
-//   });
-
-// });
+"use strict";
+
+const filesystem = require("../../");
+const CodeEngine = require("../utils/code-engine");
+const sinon = require("sinon");
+const { createDir, delay } = require("../utils");
+const { expect } = require("chai");
+const { promises: fs } = require("fs");
+const { join, normalize } = require("path");
+
+// CI environments are slow, so use a larger time buffer
+const TIME_BUFFER = process.env.CI ? 300 : 100;
+const watchDelay = process.env.CI ? 300 : 100;
+
+describe("filesystem.watch()", () => {
+
+  it("should detect a new file", async () => {
+    let dir = await createDir([
+      { path: "file1.txt", contents: "Hello, world!" },
+      { path: "file2.txt", contents: "Foo bar" },
+      { path: "file3.txt", contents: "Fizz buzz" },
+    ]);
+
+    let source = filesystem({ path: dir });
+    let buildStarting = sinon.spy();
+
+    let engine = CodeEngine.create({ watchDelay });
+    engine.on("buildStarting", buildStarting);
+    await engine.use(source);
+    engine.watch();
+
+    // Wait for Chokidar to setup its filesystem listeners
+    await delay(watchDelay);
+
+    sinon.assert.notCalled(buildStarting);
+
+    // Create a new file, then wait a bit for it to be processed
+    await fs.writeFile(join(dir, "file4.txt"), "Brand new file!");
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledOnce(buildStarting);
+    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", "file4.txt");
+    expect(changedFiles[0]).to.have.property("change", "created");
+    expect(changedFiles[0]).to.have.property("text", "Brand new file!");
+
+    // Create a deeply-nested file, then wait a bit for it to be processed
+    await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
+    await fs.writeFile(join(dir, "one/two/three/file5.txt"), "Deep new file");
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledTwice(buildStarting);
+    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", normalize("one/two/three/file5.txt"));
+    expect(changedFiles[0]).to.have.property("change", "created");
+    expect(changedFiles[0]).to.have.property("text", "Deep new file");
+  });
+
+  it("should detect changed file contents", async () => {
+    let dir = await createDir([
+      { path: "file1.txt", contents: "Hello, world!" },
+      { path: "file2.txt", contents: "Foo bar" },
+      { path: "file3.txt", contents: "Fizz buzz" },
+      { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
+    ]);
+
+    let source = filesystem({ path: dir });
+    let buildStarting = sinon.spy();
+
+    let engine = CodeEngine.create({ watchDelay });
+    engine.on("buildStarting", buildStarting);
+    await engine.use(source);
+    engine.watch();
+
+    // Wait for Chokidar to setup its filesystem listeners
+    await delay(watchDelay);
+
+    sinon.assert.notCalled(buildStarting);
+
+    // Change one of the files, then wait a bit for it to be processed
+    await fs.writeFile(join(dir, "file2.txt"), "New contents");
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledOnce(buildStarting);
+    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", "file2.txt");
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "New contents");
+
+    // Change a deeply-nested file, then wait a bit for it to be processed
+    await fs.writeFile(join(dir, "deep/sub/folder/file4.txt"), "New deep contents");
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledTwice(buildStarting);
+    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "New deep contents");
+  });
+
+  it("should detect a touched file, even with no content change", async () => {
+    let dir = await createDir([
+      { path: "file1.txt", contents: "Hello, world!" },
+      { path: "file2.txt", contents: "Foo bar" },
+      { path: "file3.txt", contents: "Fizz buzz" },
+      { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
+    ]);
+
+    let source = filesystem({ path: dir });
+    let buildStarting = sinon.spy();
+
+    let engine = CodeEngine.create({ watchDelay });
+    engine.on("buildStarting", buildStarting);
+    await engine.use(source);
+    engine.watch();
+
+    // Wait for Chokidar to setup its filesystem listeners
+    await delay(watchDelay);
+
+    sinon.assert.notCalled(buildStarting);
+
+    // Touch one of the files, then wait a bit for it to be processed
+    await fs.utimes(join(dir, "file3.txt"), new Date(), new Date());
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledOnce(buildStarting);
+    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", "file3.txt");
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "Fizz buzz");
+
+    // Touch a deeply-nested file, then wait a bit for it to be processed
+    await fs.utimes(join(dir, "deep/sub/folder/file4.txt"), new Date(), new Date());
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledTwice(buildStarting);
+    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "I'm so deep");
+  });
+
+  it.skip("should detect a deleted file", async () => {
+    let dir = await createDir([
+      { path: "file1.txt", contents: "Hello, world!" },
+      { path: "file2.txt", contents: "Foo bar" },
+      { path: "file3.txt", contents: "Fizz buzz" },
+      { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
+    ]);
+
+    let source = filesystem({ path: dir });
+    let buildStarting = sinon.spy();
+
+    let engine = CodeEngine.create({ watchDelay });
+    engine.on("buildStarting", buildStarting);
+    await engine.use(source);
+    engine.watch();
+
+    // Wait for Chokidar to setup its filesystem listeners
+    await delay(watchDelay);
+
+    sinon.assert.notCalled(buildStarting);
+
+    // Delete one of the files, then wait a bit for it to be processed
+    await fs.unlink(join(dir, "file1.txt"));
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledOnce(buildStarting);
+    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", "file1.txt");
+    expect(changedFiles[0]).to.have.property("change", "deleted");
+    expect(changedFiles[0]).to.have.property("text", "");
+
+    // Touch a deeply-nested file, then wait a bit for it to be processed
+    await fs.utimes(join(dir, "deep/sub/folder/file4.txt"), new Date(), new Date());
+    await delay(watchDelay + TIME_BUFFER);
+
+    sinon.assert.calledTwice(buildStarting);
+    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "I'm so deep");
+  });
+
+  // it("should only read files that match the path", async () => {
+  //   let dir = await createDir();
+  //   let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
+
+  //   let source = filesystem({
+  //     path: dir,
+  //     fs: { readFile },
+  //   });
+
+  //   let fileChanges = createFileChangePlugin([
+  //     { change: "modified", source: createFileUrl(join(dir, "..", "file1.txt")), path: "file1.txt" },
+  //     { change: "modified", source: createFileUrl(join(dir, "file2.txt")), path: "file2.txt" },
+  //     { change: "modified", source: "file://some/other/path", path: "file3.txt" },
+  //   ]);
+
+  //   let spy = sinon.spy();
+  //   let engine = CodeEngine.create();
+  //   await engine.use(source, fileChanges, spy);
+  //   engine.watch();
+
+  //   // Allow time for all the file changes to be procesed
+  //   await delay(100);
+
+  //   // fs.readFile() should have only been called for the file that's in our path
+  //   sinon.assert.calledOnce(readFile);
+  //   expect(readFile.firstCall.args[0].href).to.match(/\/file2.txt$/);
+
+  //   // Verify that the file contents were written
+  //   let files = getFiles(spy);
+  //   expect(files).to.have.lengthOf(3);
+
+  //   expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+  //   expect(files.find((file) => file.name === "file2.txt")).to.have.property("text", "Some contents");
+  //   expect(files.find((file) => file.name === "file3.txt")).to.have.property("text", "");
+  // });
+
+  // it("should only read files that match the glob pattern", async () => {
+  //   let dir = await createDir();
+  //   let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
+
+  //   let source = filesystem({
+  //     path: globify(dir, "**/*.html"),
+  //     fs: { readFile },
+  //   });
+
+  //   let fileChanges = createFileChangePlugin([
+  //     { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
+  //     { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
+  //     { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+  //   ]);
+
+  //   let spy = sinon.spy();
+  //   let engine = CodeEngine.create();
+  //   await engine.use(source, fileChanges, spy);
+  //   engine.watch();
+
+  //   // Allow time for all the file changes to be procesed
+  //   await delay(100);
+
+  //   // fs.readFile() should have only been called for the HTML file
+  //   sinon.assert.calledOnce(readFile);
+  //   expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
+
+  //   // Verify that the file contents were written
+  //   let files = getFiles(spy);
+  //   expect(files).to.have.lengthOf(3);
+
+  //   expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+  //   expect(files.find((file) => file.name === "file2.html")).to.have.property("text", "Some contents");
+  //   expect(files.find((file) => file.name === "file3.jpg")).to.have.property("text", "");
+  // });
+
+  // it("should only read files that match the filter criteria", async () => {
+  //   let dir = await createDir();
+  //   let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
+
+  //   let source = filesystem({
+  //     path: dir,
+  //     filter (file) {
+  //       return [".html", ".jpg"].includes(file.extension);
+  //     },
+  //     fs: { readFile },
+  //   });
+
+  //   let fileChanges = createFileChangePlugin([
+  //     { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
+  //     { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
+  //     { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+  //   ]);
+
+  //   let spy = sinon.spy();
+  //   let engine = CodeEngine.create();
+  //   await engine.use(source, fileChanges, spy);
+  //   engine.watch();
+
+  //   // Allow time for all the file changes to be procesed
+  //   await delay(100);
+
+  //   // fs.readFile() should have only been called for the HTML and JPG files
+  //   sinon.assert.calledTwice(readFile);
+  //   expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
+  //   expect(readFile.secondCall.args[0].href).to.match(/\/file3.jpg$/);
+
+  //   // Verify that the file contents were written
+  //   let files = getFiles(spy);
+  //   expect(files).to.have.lengthOf(3);
+
+  //   expect(files.find((file) => file.name === "file1.txt")).to.have.property("text", "");
+  //   expect(files.find((file) => file.name === "file2.html")).to.have.property("text", "Some contents");
+  //   expect(files.find((file) => file.name === "file3.jpg")).to.have.property("text", "Some contents");
+  // });
+
+
+
+  //
+  //
+  //
+  // TODO: TEST FOR A CUSTOM FILTER FUNCTION THROWING AN ERROR. MAKE SURE THE ERROR IS CAUGHT BY CHOKIDAR'S ERROR EVENT
+  //
+  //
+  //
+});
