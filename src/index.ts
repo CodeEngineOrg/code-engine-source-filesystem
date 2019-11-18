@@ -10,12 +10,14 @@ import { watch } from "./watch";
  */
 function filesystem(conf?: FileSystemConfig): Plugin {
   let config = normalizeConfig(conf);
+  let { startWatching, stopWatching } = watch(config);
 
   return {
     name: "Filesystem Source",
     filter: config.filter,
     read: read(config),
-    watch: watch(config),
+    watch: startWatching,
+    dispose: stopWatching,
     processFile: processFile(config),
   };
 }
