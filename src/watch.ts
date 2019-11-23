@@ -73,10 +73,13 @@ class Watcher {
   public async dispose() {
     if (!this.disposed) {
       this.disposed = true;
-      await Promise.all([
-        this.chokidar.close(),
-        this.output.end(),
-      ]);
+
+      // Don't await on this promise, since we don't know or care whether
+      // the rest of the output stream will be read.
+      // tslint:disable-next-line: no-floating-promises
+      this.output.end();
+
+      await this.chokidar.close();
     }
   }
 
