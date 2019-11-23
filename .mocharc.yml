@@ -9,6 +9,7 @@ spec:
   # Test specs
   - test/specs/**/*.spec.js
 
+timeout: 5000   # To allow for filesystem watch delays on slow CI/CD systems
 retries: 3
 bail: true
 recursive: true
