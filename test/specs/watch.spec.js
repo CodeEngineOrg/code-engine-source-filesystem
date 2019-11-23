@@ -14,6 +14,21 @@ const watchDelay = process.env.CI ? 300 : 100;
 
 describe("filesystem.watch()", () => {
 
+  /**
+   * When a file is renamed, it is seen as two changes: a delete and a create.
+   * This function returns the two changes in a consistent order.
+   */
+  function getRenamedFiles (files) {
+    expect(files).to.have.lengthOf(2);
+    let [file1, file2] = files;
+    if (file1.change === "deleted") {
+      return [file1, file2];
+    }
+    else {
+      return [file2, file1];
+    }
+  }
+
   it("should detect a new file", async () => {
     let dir = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
@@ -83,14 +98,15 @@ describe("filesystem.watch()", () => {
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
-    expect(changedFiles).to.have.lengthOf(2);
-    expect(changedFiles[0]).to.have.property("path", "file4.txt");
-    expect(changedFiles[0]).to.have.property("change", "created");
-    expect(changedFiles[0]).to.have.property("text", "Foo bar");
-    expect(changedFiles[1]).to.have.property("path", "file2.txt");
-    expect(changedFiles[1]).to.have.property("change", "deleted");
-    expect(changedFiles[1]).to.have.property("text", "");
+    let [deleted, created] = getRenamedFiles(buildStarting.firstCall.args[0].changedFiles);
+
+    expect(deleted).to.have.property("path", "file2.txt");
+    expect(deleted).to.have.property("change", "deleted");
+    expect(deleted).to.have.property("text", "");
+
+    expect(created).to.have.property("path", "file4.txt");
+    expect(created).to.have.property("change", "created");
+    expect(created).to.have.property("text", "Foo bar");
 
     // Rename a file to a deeply-nested path, then wait a bit for it to be processed
     await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
@@ -98,14 +114,15 @@ describe("filesystem.watch()", () => {
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
-    expect(changedFiles).to.have.lengthOf(2);
-    expect(changedFiles[0]).to.have.property("path", normalize("one/two/three/file5.txt"));
-    expect(changedFiles[0]).to.have.property("change", "created");
-    expect(changedFiles[0]).to.have.property("text", "Hello, world!");
-    expect(changedFiles[1]).to.have.property("path", "file1.txt");
-    expect(changedFiles[1]).to.have.property("change", "deleted");
-    expect(changedFiles[1]).to.have.property("text", "");
+    [deleted, created] = getRenamedFiles(buildStarting.secondCall.args[0].changedFiles);
+
+    expect(deleted).to.have.property("path", "file1.txt");
+    expect(deleted).to.have.property("change", "deleted");
+    expect(deleted).to.have.property("text", "");
+
+    expect(created).to.have.property("path", normalize("one/two/three/file5.txt"));
+    expect(created).to.have.property("change", "created");
+    expect(created).to.have.property("text", "Hello, world!");
   });
 
   it("should detect changed file contents", async () => {
