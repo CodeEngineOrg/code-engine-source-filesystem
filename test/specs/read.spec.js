@@ -441,4 +441,94 @@ describe("filesystem.read()", () => {
       }
     });
   });
+
+  it("should handle errors that occur in the filter function", async () => {
+    let source = filesystem({
+      path: await createDir(["file1.txt", "file2.txt", "file3.txt"]),
+      filter () {
+        throw new RangeError("Boom!");
+      }
+    });
+    let engine = CodeEngine.create();
+    await engine.use(source);
+
+    try {
+      await engine.build();
+      assert.fail("An error should have been thrown!");
+    }
+    catch (error) {
+      expect(error).to.be.an.instanceOf(Error);
+      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+    }
+  });
+
+  it("should handle errors that occur in custom fs functions", async () => {
+    let source = filesystem({
+      path: await createDir(["file1.txt", "file2.txt", "file3.txt"]),
+      fs: {
+        stat () {
+          throw new RangeError("Boom!");
+        }
+      },
+    });
+    let engine = CodeEngine.create();
+    await engine.use(source);
+
+    try {
+      await engine.build();
+      assert.fail("An error should have been thrown!");
+    }
+    catch (error) {
+      expect(error).to.be.an.instanceOf(Error);
+      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+    }
+  });
+
+  it("should handle errors that are returnd by custom fs functions", async () => {
+    let source = filesystem({
+      path: await createDir(["file1.txt", "file2.txt", "file3.txt"]),
+      fs: {
+        stat (_, callback) {
+          callback(new RangeError("Boom!"));
+        }
+      },
+    });
+    let engine = CodeEngine.create();
+    await engine.use(source);
+
+    try {
+      await engine.build();
+      assert.fail("An error should have been thrown!");
+    }
+    catch (error) {
+      expect(error).to.be.an.instanceOf(Error);
+      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+    }
+  });
+
+  it("should handle errors that are thrown by the readFile function", async () => {
+    let source = filesystem({
+      path: await createDir(["file1.txt", "file2.txt", "file3.txt"]),
+      fs: {
+        readFile () {
+          throw new RangeError("Boom!");
+        }
+      },
+    });
+    let engine = CodeEngine.create();
+    await engine.use(source);
+
+    try {
+      await engine.build();
+      assert.fail("An error should have been thrown!");
+    }
+    catch (error) {
+      expect(error).to.be.an.instanceOf(Error);
+      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+    }
+  });
 });
