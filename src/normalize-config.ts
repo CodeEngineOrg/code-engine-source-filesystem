@@ -12,7 +12,7 @@ import { FileSystemConfig, FS } from "./config";
  */
 export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
   config = validate.type.object(config, "config");
-  let path = validate.string.minLength(config.path, 1, "path");
+  let path = validate.string.nonWhitespace(config.path, "path");
   let depth = validateDeep(config.deep);
   let [filter, filterCriteria] = validateFilter(config.filter);
   let fs: FSPromises = nodeFS;
