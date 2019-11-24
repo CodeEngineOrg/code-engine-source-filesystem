@@ -1,7 +1,7 @@
 "use strict";
 
 const filesystem = require("../../");
-const CodeEngine = require("../utils/code-engine");
+const CodeEngine = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, delay, globify } = require("../utils");
 const { expect } = require("chai");
@@ -39,7 +39,7 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: dir });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -83,7 +83,7 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: dir });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -136,7 +136,7 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: dir });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -180,7 +180,7 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: dir });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -224,7 +224,7 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: dir });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -270,7 +270,7 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -315,7 +315,7 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -371,7 +371,7 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -420,7 +420,7 @@ describe("filesystem.watch()", () => {
     });
 
     let errorHandler = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("error", errorHandler);
     await engine.use(source);
     engine.watch();
@@ -454,7 +454,7 @@ describe("filesystem.watch()", () => {
     });
 
     let errorHandler = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     engine.on("error", errorHandler);
     await engine.use(source);
     engine.watch();

@@ -1,7 +1,7 @@
 "use strict";
 
 const filesystem = require("../../");
-const CodeEngine = require("../utils/code-engine");
+const CodeEngine = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, globify, getFiles } = require("../utils");
 const { assert, expect } = require("chai");
@@ -22,7 +22,7 @@ describe("filesystem.read()", () => {
 
       let source = filesystem({ path: join(dir, "www/robots.txt") });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -43,7 +43,7 @@ describe("filesystem.read()", () => {
 
       let source = filesystem({ path: join(dir, "www/img/logo.png") });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -64,7 +64,7 @@ describe("filesystem.read()", () => {
 
       let source = filesystem({ path: join(dir, "www/index.html") });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -88,7 +88,7 @@ describe("filesystem.read()", () => {
         path: join(dir, "www/index.html"),
         filter: false,
       });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
       let summary = await engine.build();
 
@@ -104,7 +104,7 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({ path: join(dir, "www/homepage.html") });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
 
       try {
@@ -132,7 +132,7 @@ describe("filesystem.read()", () => {
 
       let source = filesystem({ path: dir });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -177,7 +177,7 @@ describe("filesystem.read()", () => {
         deep: false,
       });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -209,7 +209,7 @@ describe("filesystem.read()", () => {
         path: globify(dir, "**/*.{html,png}"),
       });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -253,7 +253,7 @@ describe("filesystem.read()", () => {
         ],
       });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -292,7 +292,7 @@ describe("filesystem.read()", () => {
         }
       });
       let spy = sinon.spy();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -340,7 +340,7 @@ describe("filesystem.read()", () => {
         }
       });
 
-      let engine = CodeEngine.create({ concurrency: 3 });             // We can read 3 files simultaneously
+      let engine = new CodeEngine({ concurrency: 3 });             // We can read 3 files simultaneously
       await engine.use(source);
       let summary = await engine.build();
 
@@ -362,7 +362,7 @@ describe("filesystem.read()", () => {
 
     it("should read nothing if the directory is empty", async () => {
       let dir = await createDir();
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let source = filesystem({ path: dir });
       await engine.use(source);
 
@@ -380,7 +380,7 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({ path: globify(dir, "**/*.md") });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
       let summary = await engine.build();
 
@@ -399,7 +399,7 @@ describe("filesystem.read()", () => {
         path: dir,
         filter: /\.md$/
       });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
       let summary = await engine.build();
 
@@ -409,7 +409,7 @@ describe("filesystem.read()", () => {
 
     it("should throw an error if the path doesn't exist", async () => {
       let source = filesystem({ path: "this/path/does/not/exist" });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
 
       try {
@@ -426,7 +426,7 @@ describe("filesystem.read()", () => {
 
     it("should throw an error if the path portion of a glob pattern doesn't exist", async () => {
       let source = filesystem({ path: "this/path/does/not/exist/**/*.txt" });
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       await engine.use(source);
 
       try {
@@ -449,7 +449,7 @@ describe("filesystem.read()", () => {
         throw new RangeError("Boom!");
       }
     });
-    let engine = CodeEngine.create();
+    let engine = new CodeEngine();
     await engine.use(source);
 
     try {
@@ -472,7 +472,7 @@ describe("filesystem.read()", () => {
         }
       },
     });
-    let engine = CodeEngine.create();
+    let engine = new CodeEngine();
     await engine.use(source);
 
     try {
@@ -495,7 +495,7 @@ describe("filesystem.read()", () => {
         }
       },
     });
-    let engine = CodeEngine.create();
+    let engine = new CodeEngine();
     await engine.use(source);
 
     try {
@@ -518,7 +518,7 @@ describe("filesystem.read()", () => {
         }
       },
     });
-    let engine = CodeEngine.create();
+    let engine = new CodeEngine();
     await engine.use(source);
 
     try {

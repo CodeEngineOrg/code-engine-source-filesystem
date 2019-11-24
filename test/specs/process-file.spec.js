@@ -2,7 +2,7 @@
 
 const filesystem = require("../../");
 const { createFileUrl } = require("../../lib/create-file");
-const CodeEngine = require("../utils/code-engine");
+const CodeEngine = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, delay, globify, getFiles } = require("../utils");
 const { expect } = require("chai");
@@ -48,7 +48,7 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -85,7 +85,7 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -121,7 +121,7 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -160,7 +160,7 @@ describe("filesystem.processFile()", () => {
     ]);
 
     let spy = sinon.spy();
-    let engine = CodeEngine.create({ watchDelay });
+    let engine = new CodeEngine({ watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 

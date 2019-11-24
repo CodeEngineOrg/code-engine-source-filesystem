@@ -1,7 +1,7 @@
 "use strict";
 
 const filesystem = require("../../");
-const CodeEngine = require("../utils/code-engine");
+const CodeEngine = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, globify, getFilePaths } = require("../utils");
 const { assert, expect } = require("chai");
@@ -99,7 +99,7 @@ describe("Config", () => {
         path: dir,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -125,7 +125,7 @@ describe("Config", () => {
         deep: true,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -151,7 +151,7 @@ describe("Config", () => {
         deep: false,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -171,7 +171,7 @@ describe("Config", () => {
         deep: 0,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -191,7 +191,7 @@ describe("Config", () => {
         deep: 1,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -213,7 +213,7 @@ describe("Config", () => {
         deep: 2,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -264,7 +264,7 @@ describe("Config", () => {
         filter: "**/*.html",
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -292,7 +292,7 @@ describe("Config", () => {
         ],
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -326,7 +326,7 @@ describe("Config", () => {
         ],
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -357,7 +357,7 @@ describe("Config", () => {
         }
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
@@ -383,7 +383,7 @@ describe("Config", () => {
         filter: "**/*.html",
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
 
@@ -405,7 +405,7 @@ describe("Config", () => {
         filter: false,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
 
@@ -458,7 +458,7 @@ describe("Config", () => {
         fs: myCustomFS,
       });
 
-      let engine = CodeEngine.create();
+      let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
       let summary = await engine.build();
