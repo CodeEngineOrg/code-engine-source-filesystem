@@ -457,8 +457,7 @@ describe("filesystem.read()", () => {
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error).to.be.an.instanceOf(RangeError);
       expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
     }
   });
@@ -480,8 +479,7 @@ describe("filesystem.read()", () => {
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error).to.be.an.instanceOf(RangeError);
       expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
     }
   });
@@ -503,8 +501,7 @@ describe("filesystem.read()", () => {
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error).to.be.an.instanceOf(RangeError);
       expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
     }
   });
@@ -526,8 +523,7 @@ describe("filesystem.read()", () => {
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error).not.to.be.an.instanceOf(RangeError);
+      expect(error).to.be.an.instanceOf(RangeError);
       expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
     }
   });

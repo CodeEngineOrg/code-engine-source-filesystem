@@ -437,8 +437,7 @@ describe("filesystem.watch()", () => {
     // Make sure the error was thrown and handled
     sinon.assert.calledOnce(errorHandler);
     let error = errorHandler.firstCall.args[0];
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error).not.to.be.an.instanceOf(RangeError);
+    expect(error).to.be.an.instanceOf(RangeError);
     expect(error.message).to.equal("An error occurred in Filesystem Source while watching source files for changes. \nBoom!");
   });
 
@@ -471,8 +470,7 @@ describe("filesystem.watch()", () => {
     // Make sure the error was thrown and handled
     sinon.assert.calledOnce(errorHandler);
     let error = errorHandler.firstCall.args[0];
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error).not.to.be.an.instanceOf(RangeError);
+    expect(error).to.be.an.instanceOf(RangeError);
     expect(error.message).to.equal("An error occurred in Filesystem Source while watching source files for changes. \nBoom!");
   });
 });
