@@ -88,7 +88,7 @@ class Watcher {
    */
   private async changeDetected(change: FileChange, path: string, stats: Stats) {
     try {
-      this.context.logger.debug(`Change detected: ${change} ${path}`, { change, dir: this.dir, path });
+      this.context.log.debug(`Change detected: ${change} ${path}`, { change, dir: this.dir, path });
       let file = createChangedFile(path, stats, change);
 
       if (this.config.filter(file, this.context)) {
