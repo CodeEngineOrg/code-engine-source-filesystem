@@ -1,7 +1,7 @@
 import { ChangedFile, ChangedFileInfo, Cloneable, File, FileChange, FileInfo, FileMetadata } from "@code-engine/types";
 import { createChangedFile as createCodeEngineChangedFile, createFile as createCodeEngineFile } from "@code-engine/utils";
 import { Stats } from "fs";
-import { URL } from "url";
+import { pathToFileURL } from "url";
 
 /**
  * Creates a CodeEngine `File` object from a node `Stats` object.
@@ -29,7 +29,7 @@ export function createChangedFile(path: string, stats: Stats | undefined, change
 function createFileInfo(path: string, stats?: Stats): FileInfo {
   let info: FileInfo = {
     path,
-    source: createFileUrl(path),
+    source: pathToFileURL(path),
   };
 
   if (stats) {
@@ -39,22 +39,6 @@ function createFileInfo(path: string, stats?: Stats): FileInfo {
   }
 
   return info;
-}
-
-/**
- * Creates a `file://` URL.
- * @internal
- */
-export function createFileUrl(path: string): string {
-  if (process.platform === "win32") {
-    // Convert Windows path separators to URL separators,
-    // otherwsie they'll get converted to %5C by encodeURI()
-    path = path.replace(/\\/g, "/");
-  }
-
-  path = encodeURI(path);
-  let url = new URL(`file://${path}`);
-  return url.href;
 }
 
 /**

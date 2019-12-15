@@ -1,6 +1,5 @@
 import { Context, File, FileProcessor } from "@code-engine/types";
-import { URL } from "url";
-import { createFileUrl } from "./create-file";
+import { pathToFileURL, URL } from "url";
 import { NormalizedConfig } from "./normalize-config";
 
 /**
@@ -19,7 +18,7 @@ import { NormalizedConfig } from "./normalize-config";
  * what this `processFile()` method does.
  */
 export function processFile(config: NormalizedConfig): FileProcessor {
-  let source = createFileUrl(config.path);
+  let source = pathToFileURL(config.path).href;
 
   return async (file: File, context: Context): Promise<File> => {
     if (file.size === 0 && file.source.startsWith(source)) {

@@ -1,8 +1,8 @@
 "use strict";
 
 const filesystem = require("../../");
-const { createFileUrl } = require("../../lib/create-file");
 const CodeEngine = require("@code-engine/lib");
+const { pathToFileURL } = require("url");
 const sinon = require("sinon");
 const { createDir, delay, globify, getFiles } = require("../utils");
 const { expect } = require("chai");
@@ -42,9 +42,9 @@ describe("filesystem.processFile()", () => {
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: createFileUrl(join(dir, "file2.txt")), path: "file2.txt", text: "I already have contents" },
-      { change: "modified", source: createFileUrl(join(dir, "file3.txt")), path: "file3.txt", text: "" },
+      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(dir, "file2.txt")), path: "file2.txt", text: "I already have contents" },
+      { change: "modified", source: pathToFileURL(join(dir, "file3.txt")), path: "file3.txt", text: "" },
     ]);
 
     let spy = sinon.spy();
@@ -79,8 +79,8 @@ describe("filesystem.processFile()", () => {
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: createFileUrl(join(dir, "..", "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: createFileUrl(join(dir, "file2.txt")), path: "file2.txt" },
+      { change: "modified", source: pathToFileURL(join(dir, "..", "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(dir, "file2.txt")), path: "file2.txt" },
       { change: "modified", source: "file://some/other/path", path: "file3.txt" },
     ]);
 
@@ -115,9 +115,9 @@ describe("filesystem.processFile()", () => {
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
-      { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(dir, "file2.html")), path: "file2.html" },
+      { change: "modified", source: pathToFileURL(join(dir, "file3.jpg")), path: "file3.jpg" },
     ]);
 
     let spy = sinon.spy();
@@ -154,9 +154,9 @@ describe("filesystem.processFile()", () => {
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: createFileUrl(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: createFileUrl(join(dir, "file2.html")), path: "file2.html" },
-      { change: "modified", source: createFileUrl(join(dir, "file3.jpg")), path: "file3.jpg" },
+      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(dir, "file2.html")), path: "file2.html" },
+      { change: "modified", source: pathToFileURL(join(dir, "file3.jpg")), path: "file3.jpg" },
     ]);
 
     let spy = sinon.spy();
