@@ -22,11 +22,11 @@ export function processFile(config: NormalizedConfig): FileProcessor {
   let source: string | undefined;
 
   return async (file: File, context: Context): Promise<File> => {
-    if (file.size === 0 && file.source.startsWith(source)) {
     if (!source) {
       source = pathToFileURL(resolve(context.cwd, config.path)).href;
     }
 
+    if (file.size === 0 && (file as ChangedFile).change && file.source.startsWith(source)) {
       let url = new URL(file.source);
       file.contents = await config.fs.promises.readFile(url);
     }
