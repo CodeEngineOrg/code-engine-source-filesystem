@@ -1,6 +1,6 @@
 "use strict";
 
-const CodeEngine = require("@code-engine/lib");
+const { CodeEngine } = require("@code-engine/lib");
 
 /**
  * Dispose all CodeEngine instances after each test.

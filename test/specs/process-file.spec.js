@@ -1,8 +1,8 @@
 "use strict";
 
 const filesystem = require("../../");
-const CodeEngine = require("@code-engine/lib");
 const { pathToFileURL } = require("url");
+const { CodeEngine } = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, delay, globify, getFiles } = require("../utils");
 const { expect } = require("chai");
