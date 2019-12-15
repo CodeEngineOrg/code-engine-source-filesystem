@@ -3,7 +3,7 @@
 const filesystem = require("../../");
 const { CodeEngine } = require("@code-engine/lib");
 const sinon = require("sinon");
-const { createDir, delay, globify } = require("../utils");
+const { createDir, delay } = require("../utils");
 const { expect } = require("chai");
 const { promises: fs } = require("fs");
 const { join, normalize } = require("path");
@@ -30,16 +30,16 @@ describe("filesystem.watch()", () => {
   }
 
   it("should detect a new file", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
     ]);
 
-    let source = filesystem({ path: dir });
+    let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -50,7 +50,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Create a new file, then wait a bit for it to be processed
-    await fs.writeFile(join(dir, "file4.txt"), "Brand new file!");
+    await fs.writeFile(join(cwd, "file4.txt"), "Brand new file!");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -61,8 +61,8 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "Brand new file!");
 
     // Create a deeply-nested file, then wait a bit for it to be processed
-    await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
-    await fs.writeFile(join(dir, "one/two/three/file5.txt"), "Deep new file");
+    await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
+    await fs.writeFile(join(cwd, "one/two/three/file5.txt"), "Deep new file");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -74,16 +74,16 @@ describe("filesystem.watch()", () => {
   });
 
   it("should detect a renamed file", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
     ]);
 
-    let source = filesystem({ path: dir });
+    let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -94,7 +94,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Rename a file, then wait a bit for it to be processed
-    await fs.rename(join(dir, "file2.txt"), join(dir, "file4.txt"));
+    await fs.rename(join(cwd, "file2.txt"), join(cwd, "file4.txt"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -109,8 +109,8 @@ describe("filesystem.watch()", () => {
     expect(created).to.have.property("text", "Foo bar");
 
     // Rename a file to a deeply-nested path, then wait a bit for it to be processed
-    await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
-    await fs.rename(join(dir, "file1.txt"), join(dir, "one/two/three/file5.txt"));
+    await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
+    await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file5.txt"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -126,17 +126,17 @@ describe("filesystem.watch()", () => {
   });
 
   it("should detect changed file contents", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
       { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
     ]);
 
-    let source = filesystem({ path: dir });
+    let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -147,7 +147,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Change one of the files, then wait a bit for it to be processed
-    await fs.writeFile(join(dir, "file2.txt"), "New contents");
+    await fs.writeFile(join(cwd, "file2.txt"), "New contents");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -158,7 +158,7 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "New contents");
 
     // Change a deeply-nested file, then wait a bit for it to be processed
-    await fs.writeFile(join(dir, "deep/sub/folder/file4.txt"), "New deep contents");
+    await fs.writeFile(join(cwd, "deep/sub/folder/file4.txt"), "New deep contents");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -170,17 +170,17 @@ describe("filesystem.watch()", () => {
   });
 
   it("should detect a touched file, even with no content change", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
       { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
     ]);
 
-    let source = filesystem({ path: dir });
+    let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -191,7 +191,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Touch one of the files, then wait a bit for it to be processed
-    await fs.utimes(join(dir, "file3.txt"), new Date(), new Date());
+    await fs.utimes(join(cwd, "file3.txt"), new Date(), new Date());
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -202,7 +202,7 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "Fizz buzz");
 
     // Touch a deeply-nested file, then wait a bit for it to be processed
-    await fs.utimes(join(dir, "deep/sub/folder/file4.txt"), new Date(), new Date());
+    await fs.utimes(join(cwd, "deep/sub/folder/file4.txt"), new Date(), new Date());
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -214,17 +214,17 @@ describe("filesystem.watch()", () => {
   });
 
   it("should detect a deleted file", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
       { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
     ]);
 
-    let source = filesystem({ path: dir });
+    let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -235,7 +235,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Delete one of the files, then wait a bit for it to be processed
-    await fs.unlink(join(dir, "file1.txt"));
+    await fs.unlink(join(cwd, "file1.txt"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -246,7 +246,7 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "");
 
     // Delete a deeply-nested file, then wait a bit for it to be processed
-    await fs.unlink(join(dir, "deep/sub/folder/file4.txt"));
+    await fs.unlink(join(cwd, "deep/sub/folder/file4.txt"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -258,7 +258,7 @@ describe("filesystem.watch()", () => {
   });
 
   it("should only detect changes in the watched path", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "subdir/file1.txt", contents: "Hello, world!" },
       { path: "subdir/file2.txt", contents: "Foo bar" },
       { path: "subdir/file3.txt", contents: "Fizz buzz" },
@@ -266,11 +266,11 @@ describe("filesystem.watch()", () => {
 
     let source = filesystem({
       // Only watching the subdir, not the root dir
-      path: join(dir, "subdir"),
+      path: "subdir",
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -281,17 +281,17 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Create a new file in the root dir, then wait a bit to see if it gets detected
-    await fs.writeFile(join(dir, "file4.txt"), "I started outside of the watch path");
+    await fs.writeFile(join(cwd, "file4.txt"), "I started outside of the watch path");
     await delay(watchDelay + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Modify the file in the root dir, then wait a bit to see if it gets detected
-    await fs.utimes(join(dir, "file4.txt"), new Date(), new Date());
+    await fs.utimes(join(cwd, "file4.txt"), new Date(), new Date());
     await delay(watchDelay + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Move the file into the subdir, then wait a bit for it to be processed
-    await fs.rename(join(dir, "file4.txt"), join(dir, "subdir", "file4.txt"));
+    await fs.rename(join(cwd, "file4.txt"), join(cwd, "subdir", "file4.txt"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -303,7 +303,7 @@ describe("filesystem.watch()", () => {
   });
 
   it("should only detect changes that match the glob pattern", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
@@ -311,11 +311,11 @@ describe("filesystem.watch()", () => {
 
     let source = filesystem({
       // Only watching for HTML files
-      path: globify(dir, "**/*.html"),
+      path: "**/*.html",
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -326,12 +326,12 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Create a new text file, then wait a bit to see if it gets detected
-    await fs.writeFile(join(dir, "file4.txt"), "I'm not an HTML file");
+    await fs.writeFile(join(cwd, "file4.txt"), "I'm not an HTML file");
     await delay(watchDelay + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Create an HTML file, then wait a bit for it to be processed
-    await fs.writeFile(join(dir, "file5.html"), "<h1>Hello World</h1>");
+    await fs.writeFile(join(cwd, "file5.html"), "<h1>Hello World</h1>");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -342,8 +342,8 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "<h1>Hello World</h1>");
 
     // Rename a text file to an HTML file, then wait a bit for it to be processed
-    await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
-    await fs.rename(join(dir, "file3.txt"), join(dir, "one/two/three.html"));
+    await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
+    await fs.rename(join(cwd, "file3.txt"), join(cwd, "one/two/three.html"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -355,14 +355,14 @@ describe("filesystem.watch()", () => {
   });
 
   it("should only detect changes that match the filter criteria", async () => {
-    let dir = await createDir([
+    let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
       { path: "file2.txt", contents: "Foo bar" },
       { path: "file3.txt", contents: "Fizz buzz" },
     ]);
 
     let source = filesystem({
-      path: dir,
+      path: ".",
 
       // Only watching files that contain the word "watch"
       filter (file) {
@@ -371,7 +371,7 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
     engine.watch();
@@ -382,12 +382,12 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(buildStarting);
 
     // Create a file, then wait a bit to see if it gets detected
-    await fs.writeFile(join(dir, "file4.txt"), "I should NOT get detected");
+    await fs.writeFile(join(cwd, "file4.txt"), "I should NOT get detected");
     await delay(watchDelay + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Create a "watch" file, then wait a bit for it to be processed
-    await fs.writeFile(join(dir, "watch-me.txt"), "I SHOULD get detected");
+    await fs.writeFile(join(cwd, "watch-me.txt"), "I SHOULD get detected");
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
@@ -398,8 +398,8 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "I SHOULD get detected");
 
     // Rename a file to an "watch" file, then wait a bit for it to be processed
-    await fs.mkdir(join(dir, "one/two/three"), { recursive: true });
-    await fs.rename(join(dir, "file1.txt"), join(dir, "one/two/three/file1.watch"));
+    await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
+    await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file1.watch"));
     await delay(watchDelay + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
@@ -411,16 +411,16 @@ describe("filesystem.watch()", () => {
   });
 
   it("should handle errors that occur in the filter function", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let source = filesystem({
-      path: dir,
+      path: ".",
       filter () {
         throw new RangeError("Boom!");
       }
     });
 
     let errorHandler = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("error", errorHandler);
     await engine.use(source);
     engine.watch();
@@ -431,7 +431,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(errorHandler);
 
     // Create a file, which will trigger the filter function, which will throw an error
-    await fs.writeFile(join(dir, "file.txt"), "hello world");
+    await fs.writeFile(join(cwd, "file.txt"), "hello world");
     await delay(watchDelay + TIME_BUFFER);
 
     // Make sure the error was thrown and handled
@@ -442,9 +442,9 @@ describe("filesystem.watch()", () => {
   });
 
   it("should handle errors that occur in the readFile function", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let source = filesystem({
-      path: dir,
+      path: ".",
       fs: {
         readFile () {
           throw new RangeError("Boom!");
@@ -453,7 +453,7 @@ describe("filesystem.watch()", () => {
     });
 
     let errorHandler = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     engine.on("error", errorHandler);
     await engine.use(source);
     engine.watch();
@@ -464,7 +464,7 @@ describe("filesystem.watch()", () => {
     sinon.assert.notCalled(errorHandler);
 
     // Create a file, which will trigger the filter function, which will throw an error
-    await fs.writeFile(join(dir, "file.txt"), "hello world");
+    await fs.writeFile(join(cwd, "file.txt"), "hello world");
     await delay(watchDelay + TIME_BUFFER);
 
     // Make sure the error was thrown and handled

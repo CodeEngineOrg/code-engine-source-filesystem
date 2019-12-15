@@ -4,7 +4,7 @@ const filesystem = require("../../");
 const { pathToFileURL } = require("url");
 const { CodeEngine } = require("@code-engine/lib");
 const sinon = require("sinon");
-const { createDir, delay, globify, getFiles } = require("../utils");
+const { createDir, delay, getFiles } = require("../utils");
 const { expect } = require("chai");
 const { join } = require("path");
 
@@ -33,22 +33,22 @@ describe("filesystem.processFile()", () => {
   }
 
   it("should only read files that have no contents", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
     let source = filesystem({
-      path: dir,
+      path: ".",
       fs: { readFile },
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: pathToFileURL(join(dir, "file2.txt")), path: "file2.txt", text: "I already have contents" },
-      { change: "modified", source: pathToFileURL(join(dir, "file3.txt")), path: "file3.txt", text: "" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file2.txt")), path: "file2.txt", text: "I already have contents" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file3.txt")), path: "file3.txt", text: "" },
     ]);
 
     let spy = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -70,22 +70,22 @@ describe("filesystem.processFile()", () => {
   });
 
   it("should only read files that match the path", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
     let source = filesystem({
-      path: dir,
+      path: ".",
       fs: { readFile },
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: pathToFileURL(join(dir, "..", "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: pathToFileURL(join(dir, "file2.txt")), path: "file2.txt" },
+      { change: "modified", source: pathToFileURL(join(cwd, "..", "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file2.txt")), path: "file2.txt" },
       { change: "modified", source: "file://some/other/path", path: "file3.txt" },
     ]);
 
     let spy = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -106,22 +106,22 @@ describe("filesystem.processFile()", () => {
   });
 
   it("should only read files that match the glob pattern", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
     let source = filesystem({
-      path: globify(dir, "**/*.html"),
+      path: "**/*.html",
       fs: { readFile },
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: pathToFileURL(join(dir, "file2.html")), path: "file2.html" },
-      { change: "modified", source: pathToFileURL(join(dir, "file3.jpg")), path: "file3.jpg" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file2.html")), path: "file2.html" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file3.jpg")), path: "file3.jpg" },
     ]);
 
     let spy = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 
@@ -142,11 +142,11 @@ describe("filesystem.processFile()", () => {
   });
 
   it("should only read files that match the filter criteria", async () => {
-    let dir = await createDir();
+    let cwd = await createDir();
     let readFile = sinon.spy((file, callback) => callback(null, "Some contents"));
 
     let source = filesystem({
-      path: dir,
+      path: ".",
       filter (file) {
         return [".html", ".jpg"].includes(file.extension);
       },
@@ -154,13 +154,13 @@ describe("filesystem.processFile()", () => {
     });
 
     let fileChanges = createFileChangePlugin([
-      { change: "modified", source: pathToFileURL(join(dir, "file1.txt")), path: "file1.txt" },
-      { change: "modified", source: pathToFileURL(join(dir, "file2.html")), path: "file2.html" },
-      { change: "modified", source: pathToFileURL(join(dir, "file3.jpg")), path: "file3.jpg" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file1.txt")), path: "file1.txt" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file2.html")), path: "file2.html" },
+      { change: "modified", source: pathToFileURL(join(cwd, "file3.jpg")), path: "file3.jpg" },
     ]);
 
     let spy = sinon.spy();
-    let engine = new CodeEngine({ watchDelay });
+    let engine = new CodeEngine({ cwd, watchDelay });
     await engine.use(source, fileChanges, spy);
     engine.watch();
 

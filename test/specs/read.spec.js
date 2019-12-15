@@ -3,9 +3,9 @@
 const filesystem = require("../../");
 const { CodeEngine } = require("@code-engine/lib");
 const sinon = require("sinon");
-const { createDir, globify, getFiles } = require("../utils");
+const { createDir, getFiles } = require("../utils");
 const { assert, expect } = require("chai");
-const { join, normalize } = require("path");
+const { normalize } = require("path");
 
 // CI environments are slow, so use a larger time buffer
 const TIME_BUFFER = process.env.CI ? 100 : 50;
@@ -14,15 +14,15 @@ describe("filesystem.read()", () => {
 
   describe("single file", () => {
     it("should read a text file", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/logo.png", contents: Buffer.from([1, 0, 1, 1, 0, 1, 0, 1, 1]) },
       ]);
 
-      let source = filesystem({ path: join(dir, "www/robots.txt") });
+      let source = filesystem({ path: "www/robots.txt" });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -35,15 +35,15 @@ describe("filesystem.read()", () => {
     });
 
     it("should read a binary file", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/logo.png", contents: Buffer.from([1, 0, 1, 1, 0, 1, 0, 1, 1]) },
       ]);
 
-      let source = filesystem({ path: join(dir, "www/img/logo.png") });
+      let source = filesystem({ path: "www/img/logo.png" });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -56,15 +56,15 @@ describe("filesystem.read()", () => {
     });
 
     it("should read an empty file", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "www/index.html",
         "www/robots.txt",
         "www/img/logo.png",
       ]);
 
-      let source = filesystem({ path: join(dir, "www/index.html") });
+      let source = filesystem({ path: "www/index.html" });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -78,17 +78,17 @@ describe("filesystem.read()", () => {
     });
 
     it("should read nothing if the file doesn't match the filter criteria", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "www/robots.txt",
         "www/index.html",
         "www/img/logo.png",
       ]);
 
       let source = filesystem({
-        path: join(dir, "www/index.html"),
+        path: "www/index.html",
         filter: false,
       });
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source);
       let summary = await engine.build();
 
@@ -97,14 +97,14 @@ describe("filesystem.read()", () => {
     });
 
     it("should throw an error if the path doesn't exist", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "www/robots.txt",
         "www/index.html",
         "www/img/logo.png",
       ]);
 
-      let source = filesystem({ path: join(dir, "www/homepage.html") });
-      let engine = new CodeEngine();
+      let source = filesystem({ path: "www/homepage.html" });
+      let engine = new CodeEngine({ cwd });
       await engine.use(source);
 
       try {
@@ -122,7 +122,7 @@ describe("filesystem.read()", () => {
 
   describe("directory", () => {
     it("should read all files in the directory and sub-directories", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
@@ -130,9 +130,9 @@ describe("filesystem.read()", () => {
         { path: "www/img/logos/logo-square.png", contents: Buffer.from([0, 1, 0, 1, 0]) },
       ]);
 
-      let source = filesystem({ path: dir });
+      let source = filesystem({ path: "." });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -164,7 +164,7 @@ describe("filesystem.read()", () => {
     });
 
     it("should only read files in top-level directory", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
@@ -173,11 +173,11 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({
-        path: join(dir, "www"),
+        path: "www",
         deep: false,
       });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -197,7 +197,7 @@ describe("filesystem.read()", () => {
     });
 
     it("should read all files that match the glob pattern", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
@@ -206,10 +206,10 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({
-        path: globify(dir, "**/*.{html,png}"),
+        path: "**/*.{html,png}",
       });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -233,7 +233,7 @@ describe("filesystem.read()", () => {
     });
 
     it("should read all files that match any of the glob patterns", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
@@ -244,40 +244,38 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({
-        path: dir,
+        path: "www",
         filter: [
           "*.html",
           "*/*/*",
           "**/*.png",
-          "!*/*/*/*wide*",
+          "!*/*/*wide*",
         ],
       });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
       expect(summary.input.fileCount).to.equal(3);
-      expect(summary.input.fileSize).to.equal(25);
+      expect(summary.input.fileSize).to.equal(47);
 
       sinon.assert.callCount(spy, 3);
       let files = getFiles(spy);
 
-      let indexHtml = files.find((file) => file.name === "index.html");
-      expect(indexHtml).to.have.property("path", normalize("www/img/index.html"));
-      expect(indexHtml).to.have.property("text", "<h1>Images</h1>");
+      let indexHtml = files.find((file) => file.path === "index.html");
+      expect(indexHtml).to.have.property("text", "<h1>Hello, world!</h1>");
 
-      let favicon = files.find((file) => file.name === "favicon.ico");
-      expect(favicon).to.have.property("path", normalize("www/img/favicon.ico"));
-      expect(favicon.contents).to.deep.equal(Buffer.from([1, 1, 1, 1, 1]));
+      let imgIndexHtml = files.find((file) => file.path === normalize("img/logos/index.html"));
+      expect(imgIndexHtml).to.have.property("text", "<h1>Logo Images</h1>");
 
       let logoSquare = files.find((file) => file.name === "logo-square.png");
-      expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
+      expect(logoSquare).to.have.property("path", normalize("img/logos/logo-square.png"));
       expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
     });
 
     it("should read all files that match custom filter criteria", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         { path: "www/index.html", contents: "<h1>Hello, world!</h1>" },
         { path: "www/robots.txt", contents: "Hello, world!" },
         { path: "www/img/favicon.ico", contents: Buffer.from([1, 1, 1, 1, 1]) },
@@ -286,13 +284,13 @@ describe("filesystem.read()", () => {
       ]);
 
       let source = filesystem({
-        path: dir,
+        path: "www",
         filter (file) {
           return file.name.includes("a") || file.name.includes("e");
         }
       });
       let spy = sinon.spy();
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
       let summary = await engine.build();
 
@@ -303,24 +301,24 @@ describe("filesystem.read()", () => {
       let files = getFiles(spy);
 
       let indexHtml = files.find((file) => file.name === "index.html");
-      expect(indexHtml).to.have.property("path", normalize("www/index.html"));
+      expect(indexHtml).to.have.property("path", normalize("index.html"));
       expect(indexHtml).to.have.property("text", "<h1>Hello, world!</h1>");
 
       let favicon = files.find((file) => file.name === "favicon.ico");
-      expect(favicon).to.have.property("path", normalize("www/img/favicon.ico"));
+      expect(favicon).to.have.property("path", normalize("img/favicon.ico"));
       expect(favicon.contents).to.deep.equal(Buffer.from([1, 1, 1, 1, 1]));
 
       let logoWide = files.find((file) => file.name === "logo-wide.png");
-      expect(logoWide).to.have.property("path", normalize("www/img/logos/logo-wide.png"));
+      expect(logoWide).to.have.property("path", normalize("img/logos/logo-wide.png"));
       expect(logoWide.contents).to.deep.equal(Buffer.from([1, 0, 1, 0, 1]));
 
       let logoSquare = files.find((file) => file.name === "logo-square.png");
-      expect(logoSquare).to.have.property("path", normalize("www/img/logos/logo-square.png"));
+      expect(logoSquare).to.have.property("path", normalize("img/logos/logo-square.png"));
       expect(logoSquare.contents).to.deep.equal(Buffer.from([0, 1, 0, 1, 0]));
     });
 
     it("should read files simultaneously, up to the concurrency limit", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "file-1.txt",
         "file-2.txt",
         "file-3.txt",
@@ -331,7 +329,7 @@ describe("filesystem.read()", () => {
       let readTimes = [];                                             // Keeps track of when each file is read
 
       let source = filesystem({
-        path: dir,
+        path: ".",
         fs: {
           readFile (_, callback) {
             readTimes.push(Date.now());                               // Track when each file is read
@@ -340,12 +338,13 @@ describe("filesystem.read()", () => {
         }
       });
 
-      let engine = new CodeEngine({ concurrency: 3 });             // We can read 3 files simultaneously
+      let engine = new CodeEngine({ cwd, concurrency: 3 });           // We can read 3 files simultaneously
       await engine.use(source);
       let summary = await engine.build();
 
-      // Make sure all 5 files were read
+      // Make sure exactly 5 files were read
       expect(summary.input.fileCount).to.equal(5);
+      expect(readTimes).to.have.lengthOf(5);
 
       // The first three files should have been read simultaneously
       expect(readTimes[0] - summary.time.start).to.be.below(TIME_BUFFER);
@@ -361,9 +360,9 @@ describe("filesystem.read()", () => {
     });
 
     it("should read nothing if the directory is empty", async () => {
-      let dir = await createDir();
-      let engine = new CodeEngine();
-      let source = filesystem({ path: dir });
+      let cwd = await createDir();
+      let engine = new CodeEngine({ cwd });
+      let source = filesystem({ path: "." });
       await engine.use(source);
 
       let summary = await engine.build();
@@ -373,14 +372,14 @@ describe("filesystem.read()", () => {
     });
 
     it("should read nothing if nothing matches the glob pattern", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "www/robots.txt",
         "www/index.html",
         "www/img/logo.png",
       ]);
 
-      let source = filesystem({ path: globify(dir, "**/*.md") });
-      let engine = new CodeEngine();
+      let source = filesystem({ path: "**/*.md" });
+      let engine = new CodeEngine({ cwd });
       await engine.use(source);
       let summary = await engine.build();
 
@@ -389,17 +388,17 @@ describe("filesystem.read()", () => {
     });
 
     it("should read nothing if nothing matches the filter criteria", async () => {
-      let dir = await createDir([
+      let cwd = await createDir([
         "www/robots.txt",
         "www/index.html",
         "www/img/logo.png",
       ]);
 
       let source = filesystem({
-        path: dir,
+        path: ".",
         filter: /\.md$/
       });
-      let engine = new CodeEngine();
+      let engine = new CodeEngine({ cwd });
       await engine.use(source);
       let summary = await engine.build();
 
