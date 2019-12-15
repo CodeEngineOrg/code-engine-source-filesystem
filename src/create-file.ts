@@ -7,8 +7,8 @@ import { pathToFileURL } from "url";
  * Creates a CodeEngine `File` object from a node `Stats` object.
  * @internal
  */
-export function createFile(path: string, stats: Stats): File {
-  let info = createFileInfo(path, stats);
+export function createFile(relativePath: string, absolutePath: string, stats: Stats): File {
+  let info = createFileInfo(relativePath, absolutePath, stats);
   return createCodeEngineFile(info);
 }
 
@@ -16,8 +16,8 @@ export function createFile(path: string, stats: Stats): File {
  * Creates a CodeEngine `ChangedFile` object from a node `Stats` object.
  * @internal
  */
-export function createChangedFile(path: string, stats: Stats | undefined, change: FileChange): ChangedFile {
-  let info = createFileInfo(path, stats) as ChangedFileInfo;
+export function createChangedFile(relativePath: string, absolutePath: string, stats: Stats | undefined, change: FileChange): ChangedFile {
+  let info = createFileInfo(relativePath, absolutePath, stats) as ChangedFileInfo;
   info.change = change;
   return createCodeEngineChangedFile(info);
 }
@@ -26,10 +26,10 @@ export function createChangedFile(path: string, stats: Stats | undefined, change
  * Creates a CodeEngine `FileInfo` object from a node `Stats` object.
  * @internal
  */
-function createFileInfo(path: string, stats?: Stats): FileInfo {
+function createFileInfo(relativePath: string, absolutePath: string, stats?: Stats): FileInfo {
   let info: FileInfo = {
-    path,
-    source: pathToFileURL(path),
+    path: relativePath,
+    source: pathToFileURL(absolutePath),
   };
 
   if (stats) {

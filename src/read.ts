@@ -26,7 +26,7 @@ export function read(config: NormalizedConfig) {
  */
 async function readFile(path: FilePathInfo, config: NormalizedConfig, context: Context)
 : Promise<File | undefined> {
-  let file = createFile(path.filename, path.stats);
+  let file = createFile(path.filename, path.absolutePath, path.stats);
 
   if (config.filter(file, context)) {
     file.contents = await config.fs.promises.readFile(path.absolutePath);
@@ -56,8 +56,9 @@ function readDir(path: DirPathInfo, config: NormalizedConfig, context: Context):
       let stats = result.value;
 
       if (stats.isFile()) {
-        let file = createFile(stats.path, stats);
-        file.contents = await config.fs.promises.readFile(join(path.dir, stats.path));
+        let absolutePath = join(path.dir, stats.path);
+        let file = createFile(stats.path, absolutePath, stats);
+        file.contents = await config.fs.promises.readFile(absolutePath);
         return { value: file };
       }
       else {
@@ -77,7 +78,8 @@ function find(path: DirPathInfo, config: NormalizedConfig, context: Context) {
     let codeEngineFileFilter = config.filterCriteria;
 
     filter = (stats: Stats) => {
-      let file = createFile(stats.path, stats);
+      let absolutePath = join(path.dir, stats.path);
+      let file = createFile(stats.path, absolutePath, stats);
       return codeEngineFileFilter(file, context) as boolean;
     };
   }
