@@ -1,6 +1,17 @@
 CodeEngine Filesystem Source
 ======================================
 
+[![Cross-Platform Compatibility](https://engine.codes/img/badges/os-badges.svg)](https://travis-ci.com/CodeEngineOrg/code-engine-source-filesystem)
+[![Build Status](https://api.travis-ci.com/CodeEngineOrg/code-engine-source-filesystem.svg?branch=master)](https://travis-ci.com/CodeEngineOrg/code-engine-source-filesystem)
+
+[![Coverage Status](https://coveralls.io/repos/github/CodeEngineOrg/code-engine-source-filesystem/badge.svg?branch=master)](https://coveralls.io/github/CodeEngineOrg/code-engine-source-filesystem)
+[![Dependencies](https://david-dm.org/CodeEngineOrg/code-engine-source-filesystem.svg)](https://david-dm.org/CodeEngineOrg/code-engine-source-filesystem)
+
+[![npm](https://img.shields.io/npm/v/code-engine-source-filesystem.svg)](https://www.npmjs.com/package/code-engine-source-filesystem)
+[![License](https://img.shields.io/npm/l/code-engine-source-filesystem.svg)](LICENSE)
+
+
+
 This is a [CodeEngine](https://engine.codes/) plugin that reads files from the filesystem (local disk or network).
 
 > **NOTE:** This plugin is already built-into the [CodeEngine CLI](https://github.com/CodeEngineOrg/code-engine/wiki/Command-Line-Interface), so you may not need to use it directly unless you are using CodeEngine's [programmatic API](https://github.com/CodeEngineOrg/code-engine/wiki/Programmatic-API).
