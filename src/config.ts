@@ -8,7 +8,8 @@ export interface FileSystemConfig {
   /**
    * The relative or absolute filesystem path to read. Can be any of the following:
    *
-   *  - A file or directory path
+   *  - A file path
+   *  - A directory path
    *  - A glob pattern
    *
    */
@@ -17,7 +18,7 @@ export interface FileSystemConfig {
   /**
    * Determines the depth of sub-directories that will be read. Can be any of the following:
    *
-   *  - The number of sub-directories deep to crawl
+   *  - A number that indicates the depth of sub-directories to crawl
    *  - `Infinity` or `true` to crawl all sub-directories
    *  - Zero or `false` to only read the top-level directory contents
    *
