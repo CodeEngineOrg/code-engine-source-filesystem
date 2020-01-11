@@ -10,7 +10,7 @@ const { join, normalize } = require("path");
 
 // CI environments are slow, so use a larger time buffer
 const TIME_BUFFER = process.env.CI ? 500 : 200;
-const watchDelay = process.env.CI ? 300 : 100;
+const WATCH_DELAY = process.env.CI ? 300 : 100;
 
 describe("filesystem.watch()", () => {
 
@@ -39,19 +39,19 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Create a new file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file4.txt"), "Brand new file!");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -63,7 +63,7 @@ describe("filesystem.watch()", () => {
     // Create a deeply-nested file, then wait a bit for it to be processed
     await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
     await fs.writeFile(join(cwd, "one/two/three/file5.txt"), "Deep new file");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -83,19 +83,19 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Rename a file, then wait a bit for it to be processed
     await fs.rename(join(cwd, "file2.txt"), join(cwd, "file4.txt"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let [deleted, created] = getRenamedFiles(buildStarting.firstCall.args[0].changedFiles);
@@ -111,7 +111,7 @@ describe("filesystem.watch()", () => {
     // Rename a file to a deeply-nested path, then wait a bit for it to be processed
     await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
     await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file5.txt"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     [deleted, created] = getRenamedFiles(buildStarting.secondCall.args[0].changedFiles);
@@ -136,19 +136,19 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Change one of the files, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file2.txt"), "New contents");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -159,7 +159,7 @@ describe("filesystem.watch()", () => {
 
     // Change a deeply-nested file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "deep/sub/folder/file4.txt"), "New deep contents");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -180,19 +180,19 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Touch one of the files, then wait a bit for it to be processed
     await fs.utimes(join(cwd, "file3.txt"), new Date(), new Date());
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -203,7 +203,7 @@ describe("filesystem.watch()", () => {
 
     // Touch a deeply-nested file, then wait a bit for it to be processed
     await fs.utimes(join(cwd, "deep/sub/folder/file4.txt"), new Date(), new Date());
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -224,19 +224,19 @@ describe("filesystem.watch()", () => {
     let source = filesystem({ path: "." });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Delete one of the files, then wait a bit for it to be processed
     await fs.unlink(join(cwd, "file1.txt"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -247,7 +247,7 @@ describe("filesystem.watch()", () => {
 
     // Delete a deeply-nested file, then wait a bit for it to be processed
     await fs.unlink(join(cwd, "deep/sub/folder/file4.txt"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -270,29 +270,29 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Create a new file in the root dir, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I started outside of the watch path");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Modify the file in the root dir, then wait a bit to see if it gets detected
     await fs.utimes(join(cwd, "file4.txt"), new Date(), new Date());
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Move the file into the subdir, then wait a bit for it to be processed
     await fs.rename(join(cwd, "file4.txt"), join(cwd, "subdir", "file4.txt"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -315,24 +315,24 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Create a new text file, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I'm not an HTML file");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Create an HTML file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file5.html"), "<h1>Hello World</h1>");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -344,7 +344,7 @@ describe("filesystem.watch()", () => {
     // Rename a text file to an HTML file, then wait a bit for it to be processed
     await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
     await fs.rename(join(cwd, "file3.txt"), join(cwd, "one/two/three.html"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -371,24 +371,24 @@ describe("filesystem.watch()", () => {
     });
     let buildStarting = sinon.spy();
 
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("buildStarting", buildStarting);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(buildStarting);
 
     // Create a file, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I should NOT get detected");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
     sinon.assert.notCalled(buildStarting);
 
     // Create a "watch" file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "watch-me.txt"), "I SHOULD get detected");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledOnce(buildStarting);
     let changedFiles = buildStarting.firstCall.args[0].changedFiles;
@@ -400,7 +400,7 @@ describe("filesystem.watch()", () => {
     // Rename a file to an "watch" file, then wait a bit for it to be processed
     await fs.mkdir(join(cwd, "one/two/three"), { recursive: true });
     await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file1.watch"));
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     sinon.assert.calledTwice(buildStarting);
     changedFiles = buildStarting.secondCall.args[0].changedFiles;
@@ -420,19 +420,19 @@ describe("filesystem.watch()", () => {
     });
 
     let errorHandler = sinon.spy();
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("error", errorHandler);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(errorHandler);
 
     // Create a file, which will trigger the filter function, which will throw an error
     await fs.writeFile(join(cwd, "file.txt"), "hello world");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     // Make sure the error was thrown and handled
     sinon.assert.calledOnce(errorHandler);
@@ -453,19 +453,19 @@ describe("filesystem.watch()", () => {
     });
 
     let errorHandler = sinon.spy();
-    let engine = new CodeEngine({ cwd, watchDelay });
+    let engine = new CodeEngine({ cwd });
     engine.on("error", errorHandler);
     await engine.use(source);
-    engine.watch();
+    engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
-    await delay(watchDelay);
+    await delay(WATCH_DELAY);
 
     sinon.assert.notCalled(errorHandler);
 
     // Create a file, which will trigger the filter function, which will throw an error
     await fs.writeFile(join(cwd, "file.txt"), "hello world");
-    await delay(watchDelay + TIME_BUFFER);
+    await delay(WATCH_DELAY + TIME_BUFFER);
 
     // Make sure the error was thrown and handled
     sinon.assert.calledOnce(errorHandler);
