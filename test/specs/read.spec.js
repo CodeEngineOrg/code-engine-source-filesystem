@@ -8,7 +8,7 @@ const { assert, expect } = require("chai");
 const { normalize } = require("path");
 
 // CI environments are slow, so use a larger time buffer
-const TIME_BUFFER = process.env.CI ? 100 : 50;
+const TIME_BUFFER = process.env.CI ? 150 : 50;
 
 describe("filesystem.read()", () => {
 
@@ -24,7 +24,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(1);
       expect(summary.input.fileSize).to.equal(13);  // Hello, world!
@@ -45,7 +45,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(1);
       expect(summary.input.fileSize).to.equal(9);
@@ -66,7 +66,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(1);
       expect(summary.input.fileSize).to.equal(0);
@@ -90,7 +90,7 @@ describe("filesystem.read()", () => {
       });
       let engine = new CodeEngine({ cwd });
       await engine.use(source);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(0);
       expect(summary.input.fileSize).to.equal(0);
@@ -105,16 +105,15 @@ describe("filesystem.read()", () => {
 
       let source = filesystem({ path: "www/homepage.html" });
       let engine = new CodeEngine({ cwd });
-      await engine.use(source);
 
       try {
-        await engine.build();
+        await engine.use(source);
         assert.fail("An error should have been thrown!");
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
         expect(error.code).to.equal("ENOENT");
-        expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
+        expect(error.message).to.match(/^An error occurred in Filesystem Source while it was initializing/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*homepage.html'$/);
       }
     });
@@ -134,7 +133,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(5);
       expect(summary.input.fileSize).to.equal(50);
@@ -179,7 +178,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(2);
       expect(summary.input.fileSize).to.equal(35);
@@ -211,7 +210,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(3);
       expect(summary.input.fileSize).to.equal(32);
@@ -255,7 +254,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(3);
       expect(summary.input.fileSize).to.equal(47);
@@ -292,7 +291,7 @@ describe("filesystem.read()", () => {
       let spy = sinon.spy();
       let engine = new CodeEngine({ cwd });
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(4);
       expect(summary.input.fileSize).to.equal(37);
@@ -340,7 +339,7 @@ describe("filesystem.read()", () => {
 
       let engine = new CodeEngine({ cwd, concurrency: 3 });           // We can read 3 files simultaneously
       await engine.use(source);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       // Make sure exactly 5 files were read
       expect(summary.input.fileCount).to.equal(5);
@@ -365,7 +364,7 @@ describe("filesystem.read()", () => {
       let source = filesystem({ path: "." });
       await engine.use(source);
 
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(0);
       expect(summary.input.fileSize).to.equal(0);
@@ -381,7 +380,7 @@ describe("filesystem.read()", () => {
       let source = filesystem({ path: "**/*.md" });
       let engine = new CodeEngine({ cwd });
       await engine.use(source);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(0);
       expect(summary.input.fileSize).to.equal(0);
@@ -400,7 +399,7 @@ describe("filesystem.read()", () => {
       });
       let engine = new CodeEngine({ cwd });
       await engine.use(source);
-      let summary = await engine.build();
+      let summary = await engine.run();
 
       expect(summary.input.fileCount).to.equal(0);
       expect(summary.input.fileSize).to.equal(0);
@@ -409,16 +408,15 @@ describe("filesystem.read()", () => {
     it("should throw an error if the path doesn't exist", async () => {
       let source = filesystem({ path: "this/path/does/not/exist" });
       let engine = new CodeEngine();
-      await engine.use(source);
 
       try {
-        await engine.build();
+        await engine.use(source);
         assert.fail("An error should have been thrown!");
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
         expect(error.code).to.equal("ENOENT");
-        expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
+        expect(error.message).to.match(/^An error occurred in Filesystem Source while it was initializing/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*this[/\\]path[/\\]does[/\\]not[/\\]exist'$/);
       }
     });
@@ -426,16 +424,15 @@ describe("filesystem.read()", () => {
     it("should throw an error if the path portion of a glob pattern doesn't exist", async () => {
       let source = filesystem({ path: "this/path/does/not/exist/**/*.txt" });
       let engine = new CodeEngine();
-      await engine.use(source);
 
       try {
-        await engine.build();
+        await engine.use(source);
         assert.fail("An error should have been thrown!");
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
         expect(error.code).to.equal("ENOENT");
-        expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
+        expect(error.message).to.match(/^An error occurred in Filesystem Source while it was initializing/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*this[/\\]path[/\\]does[/\\]not[/\\]exist'$/);
       }
     });
@@ -452,7 +449,7 @@ describe("filesystem.read()", () => {
     await engine.use(source);
 
     try {
-      await engine.build();
+      await engine.run();
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
@@ -471,15 +468,14 @@ describe("filesystem.read()", () => {
       },
     });
     let engine = new CodeEngine();
-    await engine.use(source);
 
     try {
-      await engine.build();
+      await engine.use(source);
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
       expect(error).to.be.an.instanceOf(RangeError);
-      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+      expect(error.message).to.equal("An error occurred in Filesystem Source while it was initializing. \nBoom!");
     }
   });
 
@@ -493,15 +489,14 @@ describe("filesystem.read()", () => {
       },
     });
     let engine = new CodeEngine();
-    await engine.use(source);
 
     try {
-      await engine.build();
+      await engine.use(source);
       assert.fail("An error should have been thrown!");
     }
     catch (error) {
       expect(error).to.be.an.instanceOf(RangeError);
-      expect(error.message).to.equal("An error occurred in Filesystem Source while reading source files. \nBoom!");
+      expect(error.message).to.equal("An error occurred in Filesystem Source while it was initializing. \nBoom!");
     }
   });
 
@@ -518,7 +513,7 @@ describe("filesystem.read()", () => {
     await engine.use(source);
 
     try {
-      await engine.build();
+      await engine.run();
       assert.fail("An error should have been thrown!");
     }
     catch (error) {

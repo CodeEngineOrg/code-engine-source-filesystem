@@ -102,7 +102,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(8);
@@ -128,7 +128,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(8);
@@ -154,7 +154,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(2);
@@ -174,7 +174,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(2);
@@ -194,7 +194,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(4);
@@ -216,7 +216,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(6);
@@ -267,7 +267,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(5);
@@ -295,7 +295,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(11);
@@ -329,7 +329,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(11);
@@ -360,7 +360,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(8);
@@ -385,16 +385,15 @@ describe("Config", () => {
 
       let engine = new CodeEngine();
       let spy = sinon.spy();
-      await engine.use(source, spy);
 
       try {
-        await engine.build();
+        await engine.use(source, spy);
         assert.fail("An error should have been thrown!");
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
         expect(error.code).to.equal("ENOENT");
-        expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
+        expect(error.message).to.match(/^An error occurred in Filesystem Source while it was initializing/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*\*\*[/\\]\*\.txt'$/);
       }
     });
@@ -407,16 +406,15 @@ describe("Config", () => {
 
       let engine = new CodeEngine();
       let spy = sinon.spy();
-      await engine.use(source, spy);
 
       try {
-        await engine.build();
+        await engine.use(source, spy);
         assert.fail("An error should have been thrown!");
       }
       catch (error) {
         expect(error).to.be.an.instanceOf(Error);
         expect(error.code).to.equal("ENOENT");
-        expect(error.message).to.match(/^An error occurred in Filesystem Source while reading source files/);
+        expect(error.message).to.match(/^An error occurred in Filesystem Source while it was initializing/);
         expect(error.message).to.match(/ENOENT: no such file or directory, stat .*\*\*[/\\]\*\.txt'$/);
       }
     });
@@ -461,7 +459,7 @@ describe("Config", () => {
       let engine = new CodeEngine();
       let spy = sinon.spy();
       await engine.use(source, spy);
-      let summary = await engine.build();
+      let summary = await engine.run();
       let filePaths = getFilePaths(spy);
 
       expect(summary.input.fileCount).to.equal(2);

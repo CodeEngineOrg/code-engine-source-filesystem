@@ -57,8 +57,8 @@ describe("filesystem.processFile()", () => {
 
     // fs.readFile() should have only been called for the empty files
     sinon.assert.calledTwice(readFile);
-    expect(readFile.firstCall.args[0].href).to.match(/\/file1.txt$/);
-    expect(readFile.secondCall.args[0].href).to.match(/\/file3.txt$/);
+    expect(readFile.firstCall.args[0]).to.match(/\/file1.txt$/);
+    expect(readFile.secondCall.args[0]).to.match(/\/file3.txt$/);
 
     // Verify that the file contents were written
     let files = getFiles(spy);
@@ -94,7 +94,7 @@ describe("filesystem.processFile()", () => {
 
     // fs.readFile() should have only been called for the file that's in our path
     sinon.assert.calledOnce(readFile);
-    expect(readFile.firstCall.args[0].href).to.match(/\/file2.txt$/);
+    expect(readFile.firstCall.args[0]).to.match(/\/file2.txt$/);
 
     // Verify that the file contents were written
     let files = getFiles(spy);
@@ -130,7 +130,7 @@ describe("filesystem.processFile()", () => {
 
     // fs.readFile() should have only been called for the HTML file
     sinon.assert.calledOnce(readFile);
-    expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
+    expect(readFile.firstCall.args[0]).to.match(/\/file2.html$/);
 
     // Verify that the file contents were written
     let files = getFiles(spy);
@@ -169,8 +169,8 @@ describe("filesystem.processFile()", () => {
 
     // fs.readFile() should have only been called for the HTML and JPG files
     sinon.assert.calledTwice(readFile);
-    expect(readFile.firstCall.args[0].href).to.match(/\/file2.html$/);
-    expect(readFile.secondCall.args[0].href).to.match(/\/file3.jpg$/);
+    expect(readFile.firstCall.args[0]).to.match(/\/file2.html$/);
+    expect(readFile.secondCall.args[0]).to.match(/\/file3.jpg$/);
 
     // Verify that the file contents were written
     let files = getFiles(spy);

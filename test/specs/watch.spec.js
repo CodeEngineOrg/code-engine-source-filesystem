@@ -37,24 +37,24 @@ describe("filesystem.watch()", () => {
     ]);
 
     let source = filesystem({ path: "." });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create a new file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file4.txt"), "Brand new file!");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file4.txt");
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -65,8 +65,8 @@ describe("filesystem.watch()", () => {
     await fs.writeFile(join(cwd, "one/two/three/file5.txt"), "Deep new file");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("one/two/three/file5.txt"));
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -81,24 +81,24 @@ describe("filesystem.watch()", () => {
     ]);
 
     let source = filesystem({ path: "." });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Rename a file, then wait a bit for it to be processed
     await fs.rename(join(cwd, "file2.txt"), join(cwd, "file4.txt"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let [deleted, created] = getRenamedFiles(buildStarting.firstCall.args[0].changedFiles);
+    sinon.assert.calledOnce(start);
+    let [deleted, created] = getRenamedFiles(start.firstCall.args[0].changedFiles);
 
     expect(deleted).to.have.property("path", "file2.txt");
     expect(deleted).to.have.property("change", "deleted");
@@ -113,8 +113,8 @@ describe("filesystem.watch()", () => {
     await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file5.txt"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    [deleted, created] = getRenamedFiles(buildStarting.secondCall.args[0].changedFiles);
+    sinon.assert.calledTwice(start);
+    [deleted, created] = getRenamedFiles(start.secondCall.args[0].changedFiles);
 
     expect(deleted).to.have.property("path", "file1.txt");
     expect(deleted).to.have.property("change", "deleted");
@@ -134,24 +134,24 @@ describe("filesystem.watch()", () => {
     ]);
 
     let source = filesystem({ path: "." });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Change one of the files, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file2.txt"), "New contents");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file2.txt");
     expect(changedFiles[0]).to.have.property("change", "modified");
@@ -161,8 +161,8 @@ describe("filesystem.watch()", () => {
     await fs.writeFile(join(cwd, "deep/sub/folder/file4.txt"), "New deep contents");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
     expect(changedFiles[0]).to.have.property("change", "modified");
@@ -178,24 +178,24 @@ describe("filesystem.watch()", () => {
     ]);
 
     let source = filesystem({ path: "." });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Touch one of the files, then wait a bit for it to be processed
     await fs.utimes(join(cwd, "file3.txt"), new Date(), new Date());
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file3.txt");
     expect(changedFiles[0]).to.have.property("change", "modified");
@@ -205,8 +205,8 @@ describe("filesystem.watch()", () => {
     await fs.utimes(join(cwd, "deep/sub/folder/file4.txt"), new Date(), new Date());
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
     expect(changedFiles[0]).to.have.property("change", "modified");
@@ -222,24 +222,24 @@ describe("filesystem.watch()", () => {
     ]);
 
     let source = filesystem({ path: "." });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Delete one of the files, then wait a bit for it to be processed
     await fs.unlink(join(cwd, "file1.txt"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file1.txt");
     expect(changedFiles[0]).to.have.property("change", "deleted");
@@ -249,8 +249,8 @@ describe("filesystem.watch()", () => {
     await fs.unlink(join(cwd, "deep/sub/folder/file4.txt"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("deep/sub/folder/file4.txt"));
     expect(changedFiles[0]).to.have.property("change", "deleted");
@@ -268,34 +268,34 @@ describe("filesystem.watch()", () => {
       // Only watching the subdir, not the root dir
       path: "subdir",
     });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create a new file in the root dir, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I started outside of the watch path");
     await delay(WATCH_DELAY + TIME_BUFFER);
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Modify the file in the root dir, then wait a bit to see if it gets detected
     await fs.utimes(join(cwd, "file4.txt"), new Date(), new Date());
     await delay(WATCH_DELAY + TIME_BUFFER);
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Move the file into the subdir, then wait a bit for it to be processed
     await fs.rename(join(cwd, "file4.txt"), join(cwd, "subdir", "file4.txt"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file4.txt");
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -313,29 +313,29 @@ describe("filesystem.watch()", () => {
       // Only watching for HTML files
       path: "**/*.html",
     });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create a new text file, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I'm not an HTML file");
     await delay(WATCH_DELAY + TIME_BUFFER);
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create an HTML file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "file5.html"), "<h1>Hello World</h1>");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "file5.html");
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -346,8 +346,8 @@ describe("filesystem.watch()", () => {
     await fs.rename(join(cwd, "file3.txt"), join(cwd, "one/two/three.html"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("one/two/three.html"));
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -369,29 +369,29 @@ describe("filesystem.watch()", () => {
         return file.name.includes("watch");
       }
     });
-    let buildStarting = sinon.spy();
+    let start = sinon.spy();
 
     let engine = new CodeEngine({ cwd });
-    engine.on("buildStarting", buildStarting);
+    engine.on("start", start);
     await engine.use(source);
     engine.watch(WATCH_DELAY);
 
     // Wait for Chokidar to setup its filesystem listeners
     await delay(WATCH_DELAY);
 
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create a file, then wait a bit to see if it gets detected
     await fs.writeFile(join(cwd, "file4.txt"), "I should NOT get detected");
     await delay(WATCH_DELAY + TIME_BUFFER);
-    sinon.assert.notCalled(buildStarting);
+    sinon.assert.notCalled(start);
 
     // Create a "watch" file, then wait a bit for it to be processed
     await fs.writeFile(join(cwd, "watch-me.txt"), "I SHOULD get detected");
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledOnce(buildStarting);
-    let changedFiles = buildStarting.firstCall.args[0].changedFiles;
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", "watch-me.txt");
     expect(changedFiles[0]).to.have.property("change", "created");
@@ -402,8 +402,8 @@ describe("filesystem.watch()", () => {
     await fs.rename(join(cwd, "file1.txt"), join(cwd, "one/two/three/file1.watch"));
     await delay(WATCH_DELAY + TIME_BUFFER);
 
-    sinon.assert.calledTwice(buildStarting);
-    changedFiles = buildStarting.secondCall.args[0].changedFiles;
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
     expect(changedFiles).to.have.lengthOf(1);
     expect(changedFiles[0]).to.have.property("path", normalize("one/two/three/file1.watch"));
     expect(changedFiles[0]).to.have.property("change", "created");
