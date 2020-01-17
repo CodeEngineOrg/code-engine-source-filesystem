@@ -1,44 +1,27 @@
-import { Context, File } from "@code-engine/types";
+import { File, Run } from "@code-engine/types";
 import { join } from "path";
 import { readdirIterator, Stats } from "readdir-enhanced";
 import { createFile } from "./create-file";
-import { DirPathInfo, FilePathInfo, getPathInfo } from "./get-path-info";
+import { DirPathInfo, FilePathInfo } from "./get-path-info";
 import { NormalizedConfig } from "./normalize-config";
-
-/**
- * Asynchronously reads files from the filesystem and yields the ones that match the configuration critiera.
- */
-export function read(config: NormalizedConfig) {
-  return async (context: Context) => {
-    let path = await getPathInfo(config, context);
-
-    if ("filename" in path) {
-      return readFile(path, config, context);
-    }
-    else {
-      return readDir(path, config, context);
-    }
-  };
-}
 
 /**
  * Reads a single file, if it meets the filter criteria.
  */
-async function readFile(path: FilePathInfo, config: NormalizedConfig, context: Context)
-: Promise<File | undefined> {
+export async function readFile(path: FilePathInfo, config: NormalizedConfig, run: Run): Promise<File | undefined> {
   let file = createFile(path.filename, path.absolutePath, path.stats);
 
-  if (config.filter(file, context)) {
+  if (config.filter(file, run)) {
     file.contents = await config.fs.promises.readFile(path.absolutePath);
     return file;
   }
 }
 
 /**
- * Reads all files in the directory that meet the filter criteria
+ * Reads files from the filesystem and yields the ones that match the configuration critiera.
  */
-function readDir(path: DirPathInfo, config: NormalizedConfig, context: Context): AsyncIterable<File> {
-  let files = find(path, config, context);
+export function readDir(path: DirPathInfo, config: NormalizedConfig, run: Run): AsyncIterable<File> {
+  let files = find(path, config, run);
 
   return {
     [Symbol.asyncIterator]() {
@@ -71,7 +54,7 @@ function readDir(path: DirPathInfo, config: NormalizedConfig, context: Context):
 /**
  * Finds all files in the directory that match the filter criteria
  */
-function find(path: DirPathInfo, config: NormalizedConfig, context: Context) {
+function find(path: DirPathInfo, config: NormalizedConfig, run: Run) {
   let filter;
 
   if (typeof config.filterCriteria === "function") {
@@ -80,7 +63,7 @@ function find(path: DirPathInfo, config: NormalizedConfig, context: Context) {
     filter = (stats: Stats) => {
       let absolutePath = join(path.dir, stats.path);
       let file = createFile(stats.path, absolutePath, stats);
-      return codeEngineFileFilter(file, context) as boolean;
+      return codeEngineFileFilter(file, run) as boolean;
     };
   }
   else {

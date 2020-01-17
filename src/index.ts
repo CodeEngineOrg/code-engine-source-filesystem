@@ -1,26 +1,4 @@
-import { Plugin } from "@code-engine/types";
-import { FileSystemConfig } from "./config";
-import { normalizeConfig } from "./normalize-config";
-import { processFile } from "./process-file";
-import { read } from "./read";
-import { watch } from "./watch";
-
-/**
- * A CodeEngine plugin that reads files from the filesystem.
- */
-function filesystem(conf?: FileSystemConfig): Plugin {
-  let config = normalizeConfig(conf);
-  let { startWatching, stopWatching } = watch(config);
-
-  return {
-    name: "Filesystem Source",
-    filter: config.filter,
-    read: read(config),
-    watch: startWatching,
-    dispose: stopWatching,
-    processFile: processFile(config),
-  };
-}
+import { filesystem } from "./plugin";
 
 // Named exports
 export * from "./config";

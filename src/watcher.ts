@@ -1,52 +1,21 @@
 // tslint:disable: no-promise-as-boolean
-import { ChangedFile, Context, FileChange } from "@code-engine/types";
+import { ChangedFile, CodeEngine, FileChange } from "@code-engine/types";
 import { IterableWriter } from "@code-engine/utils";
 import * as chokidar from "chokidar";
 import { Stats } from "fs";
 import { join, posix } from "path";
 import { createChangedFile } from "./create-file";
-import { DirPathInfo, FilePathInfo, getPathInfo } from "./get-path-info";
+import { DirPathInfo, FilePathInfo } from "./get-path-info";
 import { NormalizedConfig } from "./normalize-config";
-
-/**
- * Watches the filesystem and yields any changes that are detected.
- */
-export function watch(config: NormalizedConfig) {
-  let watcher: Watcher | undefined;
-
-  return {
-    /**
-     * Starts watching the filesystem for changes.
-     */
-    async startWatching(context: Context) {
-      let path = await getPathInfo(config, context);
-      watcher = new Watcher(path, config, context);
-      return watcher.iterable;
-    },
-
-
-    /**
-     * Stops watching the filesystem for changes.
-     */
-    async stopWatching() {
-      if (watcher) {
-        let promise = watcher.dispose();
-        watcher = undefined;
-        await promise;
-      }
-    }
-  };
-}
-
 
 /**
  * Internal class that wraps the filesystem watch functionality.
  */
-class Watcher {
+export class Watcher {
   private chokidar: chokidar.FSWatcher;
   private output: IterableWriter<ChangedFile>;
   private config: NormalizedConfig;
-  private context: Context;
+  private engine: CodeEngine;
   private dir: string;
   private disposed = false;
 
@@ -54,12 +23,12 @@ class Watcher {
     return this.output.iterable;
   }
 
-  public constructor(path: DirPathInfo | FilePathInfo, config: NormalizedConfig, context: Context) {
+  public constructor(engine: CodeEngine, path: DirPathInfo | FilePathInfo, config: NormalizedConfig) {
     this.chokidar = createChokidar(path, config);
     this.output = new IterableWriter<ChangedFile>();
     this.config = config;
-    this.context = context;
     this.dir = path.dir;
+    this.engine = engine;
 
     this.chokidar.on("add", this.changeDetected.bind(this, FileChange.Created));
     this.chokidar.on("change", this.changeDetected.bind(this, FileChange.Modified));
@@ -88,11 +57,11 @@ class Watcher {
    */
   private async changeDetected(change: FileChange, path: string, stats: Stats) {
     try {
-      this.context.log.debug(`Change detected: ${change} ${path}`, { change, dir: this.dir, path });
+      this.engine.log.debug(`Change detected: ${change} ${path}`, { change, dir: this.dir, path });
       let absolutePath = join(this.dir, path);
       let file = createChangedFile(path, absolutePath, stats, change);
 
-      if (this.config.filter(file, this.context)) {
+      if (this.config.filter(file, this.engine)) {
         if (change !== FileChange.Deleted) {
           file.contents = await this.config.fs.promises.readFile(join(this.dir, path));
         }

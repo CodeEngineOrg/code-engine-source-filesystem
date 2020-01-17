@@ -1,4 +1,4 @@
-import { Context } from "@code-engine/types";
+import { CodeEngine } from "@code-engine/types";
 import { Stats } from "fs";
 import { basename, dirname, resolve } from "path";
 import { NormalizedConfig } from "./normalize-config";
@@ -29,8 +29,8 @@ export interface FilePathInfo extends PathInfo {
 /**
  * Returns detailed information about the config path.
  */
-export async function getPathInfo(config: NormalizedConfig, context: Context): Promise<DirPathInfo | FilePathInfo> {
-  let absolutePath = resolve(context.cwd, config.path);
+export async function getPathInfo(engine: CodeEngine, config: NormalizedConfig): Promise<DirPathInfo | FilePathInfo> {
+  let absolutePath = resolve(engine.cwd, config.path);
   let stats = await config.fs.promises.stat(absolutePath);
 
   if (stats.isFile()) {
