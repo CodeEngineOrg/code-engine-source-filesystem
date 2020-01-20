@@ -1,5 +1,5 @@
 import { ChangedFile, File, Plugin, Run } from "@code-engine/types";
-import { pathToFileURL } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { FileSystemConfig } from "./config";
 import { DirPathInfo, FilePathInfo, getPathInfo } from "./get-path-info";
 import { normalizeConfig } from "./normalize-config";
@@ -50,7 +50,8 @@ export function filesystem(options?: FileSystemConfig): Plugin {
       // If the file has no contents, and it has changed, and it's within our source path,
       // then re-read its contents from disk
       if (file.size === 0 && (file as ChangedFile).change && file.source.startsWith(source)) {
-        file.contents = await config.fs.promises.readFile(file.source);
+        let absolutePath = fileURLToPath(file.source);
+        file.contents = await config.fs.promises.readFile(absolutePath);
       }
 
       return file;
