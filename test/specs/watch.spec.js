@@ -169,6 +169,59 @@ describe("filesystem.watch()", () => {
     expect(changedFiles[0]).to.have.property("text", "New deep contents");
   });
 
+  it("should detect a file that was changed by another plugin", async () => {
+    let cwd = await createDir([
+      { path: "file1.txt", contents: "Hello, world!" },
+      { path: "file2.txt", contents: "Foo bar" },
+      { path: "file3.txt", contents: "Fizz buzz" },
+      { path: "deep/sub/folder/file4.txt", contents: "I'm so deep" },
+    ]);
+
+    let otherPlugin = {
+      // Capture the source URL of file2.txt
+      processFile (file) {
+        if (file.path === "file2.txt") {
+          this.file2Source = file.source;
+        }
+        return file;
+      },
+
+      // Trigger a file change for file2.txt
+      watch (fileChanged) {
+        setTimeout(() => {
+          fileChanged({
+            change: "modified",
+            path: "file2.txt",
+            source: this.file2Source
+          });
+        }, 100);
+      }
+    };
+
+    let source = filesystem({ path: "." });
+    let start = sinon.spy();
+
+    let engine = new CodeEngine({ cwd });
+    engine.on("start", start);
+    await engine.use(source, otherPlugin);
+    await engine.run();
+
+    sinon.assert.calledOnce(start);
+    let changedFiles = start.firstCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(0);
+
+    // Wait for the file change to be triggered and the watch delay to pass
+    engine.watch(WATCH_DELAY);
+    await delay(WATCH_DELAY + TIME_BUFFER);
+
+    sinon.assert.calledTwice(start);
+    changedFiles = start.secondCall.args[0].changedFiles;
+    expect(changedFiles).to.have.lengthOf(1);
+    expect(changedFiles[0]).to.have.property("path", "file2.txt");
+    expect(changedFiles[0]).to.have.property("change", "modified");
+    expect(changedFiles[0]).to.have.property("text", "Foo bar");
+  });
+
   it("should detect a touched file, even with no content change", async () => {
     let cwd = await createDir([
       { path: "file1.txt", contents: "Hello, world!" },
