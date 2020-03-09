@@ -1,6 +1,6 @@
 import { File, Filter, FilterFunction } from "@code-engine/types";
 import { validate } from "@code-engine/validate";
-import { createFilter, filePathFilter } from "file-path-filter";
+import { createFilter, filePathFilter } from "@jsdevtools/file-path-filter";
 import * as nodeFS from "fs";
 import * as isGlob from "is-glob";
 import { promisify } from "util";

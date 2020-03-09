@@ -1,6 +1,7 @@
 "use strict";
 
 const filesystem = require("../../");
+const { host } = require("@jsdevtools/host-environment");
 const { CodeEngine } = require("@code-engine/lib");
 const sinon = require("sinon");
 const { createDir, getFiles } = require("../utils");
@@ -8,7 +9,7 @@ const { assert, expect } = require("chai");
 const { normalize } = require("path");
 
 // CI environments are slow, so use a larger time buffer
-const TIME_BUFFER = process.env.CI ? 150 : 50;
+const TIME_BUFFER = host.ci ? 150 : 50;
 
 describe("filesystem.read()", () => {
 

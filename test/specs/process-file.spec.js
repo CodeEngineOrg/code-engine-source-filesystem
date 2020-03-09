@@ -3,14 +3,15 @@
 const filesystem = require("../../");
 const { pathToFileURL } = require("url");
 const { CodeEngine } = require("@code-engine/lib");
+const { host } = require("@jsdevtools/host-environment");
 const sinon = require("sinon");
 const { createDir, delay, getFiles } = require("../utils");
 const { expect } = require("chai");
 const { join } = require("path");
 
 // CI environments are slow, so use a larger time buffer
-const TIME_BUFFER = process.env.CI ? 100 : 50;
-const WATCH_DELAY = process.env.CI ? 300 : 100;
+const TIME_BUFFER = host.ci ? 100 : 50;
+const WATCH_DELAY = host.ci ? 300 : 100;
 
 describe("filesystem.processFile()", () => {
 
