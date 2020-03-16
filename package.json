@@ -1,6 +1,6 @@
 {
   "name": "code-engine-source-filesystem",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A CodeEngine plugin that reads files from the filesystem",
   "keywords": [
     "code-engine-plugin",
