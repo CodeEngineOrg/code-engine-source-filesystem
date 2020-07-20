@@ -1,5 +1,5 @@
 import { File, Filter, FilterFunction } from "@code-engine/types";
-import { validate } from "@code-engine/validate";
+import { assert } from "@jsdevtools/assert";
 import { createFilter, filePathFilter } from "@jsdevtools/file-path-filter";
 import * as nodeFS from "fs";
 import * as isGlob from "is-glob";
@@ -11,8 +11,8 @@ import { FileSystemConfig, FS } from "./config";
  * @internal
  */
 export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
-  config = validate.type.object(config, "config");
-  let path = validate.string.nonWhitespace(config.path, "path");
+  config = assert.type.object(config, "config");
+  let path = assert.string.nonWhitespace(config.path, "path");
   let depth = validateDeep(config.deep);
   let [filter, filterCriteria] = validateFilter(config.filter);
   let fs: FSPromises = nodeFS;
@@ -31,10 +31,10 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
 
   if (config.fs) {
     fs = {
-      stat: validate.type.function(config.fs.stat, "fs.stat", nodeFS.stat),
-      lstat: validate.type.function(config.fs.lstat, "fs.lstat", nodeFS.lstat),
-      readdir: validate.type.function(config.fs.readdir, "fs.readdir", nodeFS.readdir),
-      readFile: validate.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile),
+      stat: assert.type.function(config.fs.stat, "fs.stat", nodeFS.stat),
+      lstat: assert.type.function(config.fs.lstat, "fs.lstat", nodeFS.lstat),
+      readdir: assert.type.function(config.fs.readdir, "fs.readdir", nodeFS.readdir),
+      readFile: assert.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile),
       promises: {
         stat: promisify(validate.type.function(config.fs.stat, "fs.stat", nodeFS.stat)),
         readFile: promisify(validate.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile)),
@@ -49,7 +49,7 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
  * Validates and normalizes the `deep` option.
  */
 function validateDeep(deep?: boolean | number): number {
-  validate.type.oneOf(deep, [Boolean, Number, undefined], "deep option");
+  assert.type.oneOf(deep, [Boolean, Number, undefined], "deep option");
 
   switch (deep) {
     case true:
@@ -60,7 +60,7 @@ function validateDeep(deep?: boolean | number): number {
       return 0;
 
     default:
-      return validate.number.integer.nonNegative(deep, "deep option");
+      return assert.number.integer.nonNegative(deep, "deep option");
   }
 }
 
