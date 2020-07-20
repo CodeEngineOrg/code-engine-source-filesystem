@@ -1,4 +1,3 @@
-// tslint:disable: no-promise-as-boolean
 import { ChangedFile, CodeEngine, FileChange } from "@code-engine/types";
 import { IterableWriter } from "@code-engine/utils";
 import * as chokidar from "chokidar";
@@ -30,10 +29,10 @@ export class Watcher {
     this.dir = path.dir;
     this.engine = engine;
 
-    this.chokidar.on("add", this.changeDetected.bind(this, FileChange.Created));
-    this.chokidar.on("change", this.changeDetected.bind(this, FileChange.Modified));
-    this.chokidar.on("unlink", this.changeDetected.bind(this, FileChange.Deleted));
-    this.chokidar.on("error", this.errorHandler.bind(this));
+    this.chokidar.on("add", this.changeDetected.bind(this, FileChange.Created));          // eslint-disable-line @typescript-eslint/no-misused-promises
+    this.chokidar.on("change", this.changeDetected.bind(this, FileChange.Modified));      // eslint-disable-line @typescript-eslint/no-misused-promises
+    this.chokidar.on("unlink", this.changeDetected.bind(this, FileChange.Deleted));       // eslint-disable-line @typescript-eslint/no-misused-promises
+    this.chokidar.on("error", this.errorHandler.bind(this));                              // eslint-disable-line @typescript-eslint/no-misused-promises
   }
 
   /**
@@ -45,8 +44,7 @@ export class Watcher {
 
       // Don't await on this promise, since we don't know or care whether
       // the rest of the output stream will be read.
-      // tslint:disable-next-line: no-floating-promises
-      this.output.end();
+      this.output.end();  // eslint-disable-line @typescript-eslint/no-floating-promises
 
       await this.chokidar.close();
     }

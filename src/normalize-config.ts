@@ -36,8 +36,8 @@ export function normalizeConfig(config?: FileSystemConfig): NormalizedConfig {
       readdir: assert.type.function(config.fs.readdir, "fs.readdir", nodeFS.readdir),
       readFile: assert.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile),
       promises: {
-        stat: promisify(validate.type.function(config.fs.stat, "fs.stat", nodeFS.stat)),
-        readFile: promisify(validate.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile)),
+        stat: promisify(assert.type.function(config.fs.stat, "fs.stat", nodeFS.stat)),
+        readFile: promisify(assert.type.function(config.fs.readFile, "fs.readFile", nodeFS.readFile)),
       }
     };
   }
@@ -138,7 +138,6 @@ export interface NormalizedConfig {
  */
 export interface FSPromises extends FS {
   promises: {
-    // tslint:disable: completed-docs
     stat(path: string): Promise<nodeFS.Stats>;
     readFile(path: nodeFS.PathLike): Promise<Buffer>;
   };

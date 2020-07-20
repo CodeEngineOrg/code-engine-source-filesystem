@@ -46,7 +46,7 @@ export function filesystem(options?: FileSystemConfig): Plugin {
     /**
      * Re-read files that were marked as changed by other plugins.
      */
-    async processFile(file: File, run: Run) {
+    async processFile(file: File, _: Run) {
       // If the file has no contents, and it has changed, and it's within our source path,
       // then re-read its contents from disk
       if (file.size === 0 && (file as ChangedFile).change && file.source.startsWith(source)) {
@@ -60,7 +60,7 @@ export function filesystem(options?: FileSystemConfig): Plugin {
     /**
      * Watches the filesystem and yields any changes that are detected.
      */
-    async watch() {
+    watch() {
       watcher = watcher || new Watcher(this.engine, path, config);
       return watcher.iterable;
     },
